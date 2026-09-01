@@ -124,6 +124,13 @@ function toCamelWord(word: string): string {
   return pascal[0].toLowerCase() + pascal.slice(1);
 }
 
+/** Builds a namespaced camelCase function name from endpoint path segments, e.g. ["cat", "aliases"] -> "catAliases". */
+function toNamespacedCamel(segments: string[]): string {
+  return segments
+    .map((segment, i) => (i === 0 ? toCamelWord(segment) : toPascalWord(segment)))
+    .join('');
+}
+
 const schema: Schema = JSON.parse(readFileSync(SCHEMA_PATH, 'utf8'));
 
 const estypesSource = readFileSync(ESTYPES_PATH, 'utf8');
@@ -236,11 +243,12 @@ for (const endpoint of schema.endpoints) {
 
   const segments = endpoint.name.split('.');
   const folder = segments.length > 1 ? segments[0] : null;
-  const functionName = toCamelWord(segments[segments.length - 1]);
+  const fileBaseName = toCamelWord(segments[segments.length - 1]);
+  const functionName = toNamespacedCamel(segments);
   const implName = RESERVED_WORDS.has(functionName)
     ? `${functionName}_`
     : functionName;
-  const relPath = folder ? `${folder}/${functionName}` : functionName;
+  const relPath = folder ? `${folder}/${fileBaseName}` : functionName;
   const corePrefix = folder ? '../../core' : '../core';
 
   const pascalName = toPascalDotted(endpoint.name);

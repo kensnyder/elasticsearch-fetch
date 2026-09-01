@@ -13,6 +13,18 @@ function toPascalWord(word: string): string {
     .join('');
 }
 
+function toCamelWord(word: string): string {
+  const pascal = toPascalWord(word);
+  return pascal[0].toLowerCase() + pascal.slice(1);
+}
+
+/** Builds a namespaced camelCase function name from generated-file path segments, e.g. ["cat", "aliases"] -> "catAliases". */
+function toNamespacedCamel(segments: string[]): string {
+  return segments
+    .map((segment, i) => (i === 0 ? toCamelWord(segment) : toPascalWord(segment)))
+    .join('');
+}
+
 function findGeneratedFiles(dir: string): string[] {
   const results: string[] = [];
   for (const entry of readdirSync(dir)) {
@@ -31,15 +43,8 @@ const files = findGeneratedFiles(GENERATED_DIR).sort();
 const exportLines = files.map(filePath => {
   const relPath = relative(GENERATED_DIR, filePath).replace(/\.ts$/, '');
   const segments = relPath.split('/');
-  const functionName = segments[segments.length - 1];
-  const aliasName =
-    segments.length === 1
-      ? functionName
-      : segments.slice(0, -1).map(toPascalWord).join('') +
-        toPascalWord(functionName);
-  return functionName === aliasName
-    ? `export { ${functionName} } from './src/generated/${relPath}';`
-    : `export { ${functionName} as ${aliasName} } from './src/generated/${relPath}';`;
+  const functionName = toNamespacedCamel(segments);
+  return `export { ${functionName} } from './src/generated/${relPath}';`;
 });
 
 const entrySource = `export { createTransport } from './src/core/createTransport';
