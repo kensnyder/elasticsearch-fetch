@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test';
+import { createTransport } from './createTransport.ts';
 import { ResponseError } from './errors';
-import { createTransport } from './Transport';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {

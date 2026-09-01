@@ -1,6 +1,6 @@
-import { type Auth, buildAuthHeader } from './auth';
+import { type Auth, buildAuthHeader } from './buildAuthHeader.ts';
+import { buildQuerystring } from './buildQuerystring.ts';
 import { ResponseError } from './errors';
-import { buildQuerystring } from './querystring';
 
 export interface TransportOptions {
   node: string | string[];

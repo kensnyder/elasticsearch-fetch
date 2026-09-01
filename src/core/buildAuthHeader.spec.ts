@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { buildAuthHeader } from './auth';
+import { buildAuthHeader } from './buildAuthHeader.ts';
 
 describe('buildAuthHeader', () => {
   it('returns undefined when no auth is provided', () => {

@@ -3,15 +3,15 @@ import {
   type RequestOptions,
   type Transport,
   type TransportOptions,
-} from './core/Transport';
+} from './core/createTransport.ts';
 import { endpoints } from './generated/manifest';
 
-export { ConfigurationError, ResponseError } from './core/errors';
 export type {
   RequestOptions,
   Transport,
   TransportOptions,
-} from './core/Transport';
+} from './core/createTransport.ts';
+export { ConfigurationError, ResponseError } from './core/errors';
 
 /**
  * SDK-compatible client. Method names/namespacing mirror @elastic/elasticsearch

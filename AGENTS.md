@@ -38,8 +38,8 @@ generating a parallel type system.
   This same file is why `bun run build` runs `build:generate` and
   `build:functions:entry` before any dts/esm/cjs step.
 - `/src`: Hand-written source, plus generated code:
-    - `src/core/`: hand-written transport layer (`Transport.ts`, `url.ts`,
-      `errors.ts`, `auth.ts`). Every generated function imports from here.
+    - `src/core/`: hand-written transport layer (`createTransport.ts`, `url.ts`,
+      `errors.ts`, `buildAuthHeader.ts`). Every generated function imports from here.
     - `src/client.ts`: hand-written SDK-compatible `Client` class. Builds its
       method tree at construction time from `src/generated/manifest.ts`'s
       `endpoints` list — it does not import individual endpoint files directly.

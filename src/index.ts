@@ -4,4 +4,4 @@ export type {
   RequestOptions,
   Transport,
   TransportOptions,
-} from './core/Transport';
+} from './core/createTransport.ts';
