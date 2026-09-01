@@ -20,3 +20,10 @@ export class ConfigurationError extends Error {
     this.name = 'ConfigurationError';
   }
 }
+
+export class SerializationError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(`Error serializing payload: ${message}`, options);
+    this.name = 'SerializationError';
+  }
+}
