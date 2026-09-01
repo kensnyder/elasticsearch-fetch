@@ -14,10 +14,25 @@
 npm install elasticsearch-fetch
 ```
 
+## Table of Contents
+
+- [File Sizes](#usage)
+- [Usage Option 1: Full SDK](#option-1---full-sdk---21kb-minzipped) 
+- [Usage Option 2: Functional Tree-Shaken](#option-2---functional-tree-shaken-your-build-includes-only-what-you-use)
+- [Usage Option 3 (Recommended): Custom SDK](#option-3-recommended---custom-sdk-build-your-own-client-from-presets-andor-individual-endpoints)
+- [Presets](#presets)
+- [Auth](#auth)
+- [TypeScript Types](#typescript-types)
+- [All Operations](#all-operations)
+- [How it Works](#how-it-works)
+- [Contributions](#contributions)
+
 ## Usage
 
 There are three ways to use elasticsearch-fetch depending on whether you prefer
 compatibility or build size.
+
+### File Sizes
 
 Your build of `elasticsearch-fetch` can range anywhere between 4kb and 21kb minzipped. But compare that to `@elastic/elasticsearch`'s build size of 257kb minzipped. That's a bundle size savings of 92% to 98%!
 
@@ -54,7 +69,7 @@ const bulkResponse = await client.bulk({ refresh: true, operations });
 const count = await client.count({ index: 'tweets' });
 ```
 
-### Option 2 - Tree-shaken: your build includes only what you use
+### Option 2 - Functional tree-shaken: your build includes only what you use
 
 ```ts
 import { createTransport, create, bulk, count } from 'elasticsearch-fetch/functions';
@@ -132,14 +147,14 @@ Import any combination of the following from `elasticsearch-fetch/presets`
 - presetSql - all 6 `sql.*` operations
 - presetAsyncSearch - all 4 `asyncSearch.*` operations
 
-#### Example build sizes:
+#### Example minzipped build sizes:
 
 - Monlithic @elastic/elasticsearch - 257kb
 - Full elasticsearch-fetch - 21kb
 - presetCrud - 4kb
 - presetCrud + presetSchema - 7kb
 
-## Auth Options
+## Auth
 
 You can specify auth in 7 different ways
 
@@ -151,19 +166,59 @@ You can specify auth in 7 different ways
 6. `process.env.ELASTICSEARCH_BEARER` - Env var for bearer token
 7. `process.env.ELASTICSEARCH_API_KEY` - Env var for API key
 
-## Docs
+## TypeScript Types
+
+Every operation in `elasticsearch-fetch` — whether you use the full SDK, a
+tree-shaken function, or a custom preset-built client — is typed using the
+same request/response interfaces as `@elastic/elasticsearch`, exposed under
+its `estypes` namespace. `elasticsearch-fetch` doesn't redefine or duplicate
+Elasticsearch's types; it imports `estypes` as a `type`-only import and reuses
+it directly, so `@elastic/elasticsearch` only needs to be present for its
+type definitions — none of its runtime code ends up in your bundle.
+
+In practice this means you get the same editor autocomplete and compile-time
+checking you'd get from the official SDK:
+
+```ts
+import { Client } from 'elasticsearch-fetch';
+
+const client = new Client({ node: 'http://localhost:9200' });
+
+// TypeScript knows the shape of `count`'s params...
+await client.count({ index: 'tweets', min_score: 1.5 });
+
+// ...and flags mistakes before you run the code
+await client.count({ index: 'tweets', min_score: '1.5' }); // Error: string is not assignable to number
+await client.count({ indx: 'tweets' }); // Error: `indx` does not exist; did you mean `index`?
+
+// The resolved response is typed too, so properties autocomplete
+const result = await client.count({ index: 'tweets' });
+console.log(result.count); // number
+```
+
+Each generated function is typed as `(transport, params: estypes.XRequest, options?) => Promise<estypes.XResponse>`
+for its operation (for example `count`'s params/response types are
+`estypes.CountRequest`/`estypes.CountResponse`). When you build a client from
+`Client`, presets, or `register()`, those per-function types flow through
+into the shape of `client`, so only the methods you actually registered
+appear on it, each with its own accurately typed params and response —
+there's no generic "any operation" signature to fall back on.
+
+## All Operations
 
 For a list of all methods will associated links to Elasticsearch's online documentation see one of the following:
 
 - [SDK methods](./docs/API.md)
 - [Functions](./docs/functions.md)
 
-## How it works
+## How it Works
 
 Elasticsearch releases a schema file on GitHub that includes all server methods. They generate the JavaScript SDK programmatically based on that schema. Each generated function includes runtime validation which takes up a lot of space. For instance the source code of `bulk` is 2768 bytes in `@elastic/elasticsearch`, but 365 bytes in `elasticsearch-fetch/functions`.
 
 So `elasticsearch-fetch` includes a small fetch-based transport layer instead of the node-networking transport layer of `@elastic/elasticsearch`. But it also builds its dist from Elasticsearch's own schema file.
 
-## Contributions and local development
+## Contributions
+
+Contributions through GitHub [issues](https://github.com/kensnyder/elasticsearch-fetch/issues) and [pull requests](https://github.com/kensnyder/elasticsearch-fetch/pulls) are welcome.
 
 [Bun](https://bun.sh) is required for testing and building the `elasticsearch-fetch` package.
