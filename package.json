@@ -38,7 +38,7 @@
     "format": "biome format --write",
     "test": "bun test ./src/",
     "test-watch": "bun test --watch ./src/",
-    "build": "bun run build:clean && bun run build:generate && bun run build:functions:entry && bun run build:esm && bun run build:gzip-size && bun run build:dts",
+    "build": "bun run build:clean && bun run build:generate && bun run build:functions:entry && bun run build:esm && bun run build:gzip-size",
     "build:clean": "rm -rf dist/ && mkdir dist",
     "build:generate": "bun run scripts/generate.ts",
     "build:functions:entry": "bun run scripts/build-functions-entry.ts",

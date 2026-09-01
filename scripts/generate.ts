@@ -314,12 +314,9 @@ for (const endpoint of schema.endpoints) {
         ...requestType.query.map(p => p.name),
         ...COMMON_QUERY_PARAMS,
       ]),
-    ];
-    const newQueryNames = allQueryNames.filter(name => !pathNameSet.has(name));
-    destructureParts = [...pathNames, ...newQueryNames, '...body'];
+    ].filter(name => !pathNameSet.has(name));
+    destructureParts = [...pathNames, ...allQueryNames, '...body'];
     requestObjectLines = [
-      '    method,',
-      '    path,',
       `    querystring: { ${allQueryNames.join(', ')} },`,
       '    body,',
     ];
@@ -331,7 +328,7 @@ for (const endpoint of schema.endpoints) {
         bodyKey === 'body' ? 'body' : `${bodyKey}: body`
       );
     }
-    requestObjectLines = ['    method,', '    path,', '    querystring,'];
+    requestObjectLines = ['    querystring,'];
     if (requestType.body.kind === 'value') {
       requestObjectLines.push('    body,');
       if (ndjson) requestObjectLines.push('    ndjson: true,');
@@ -357,9 +354,9 @@ ${jsDoc}${exportKeyword} ${implName}(
   params: ${requestTypeName},
   options?: RequestOptions
 ): Promise<${responseTypeName}> {
-  const { method, path } = resolveUrl(URLS, params);
   const { ${destructureParts.join(', ')} } = params;
   return transport.request<${responseTypeName}>({
+    ...resolveUrl(URLS, params),
 ${requestObjectLines.join('\n')}
   }, options);
 }
