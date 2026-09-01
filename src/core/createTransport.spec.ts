@@ -54,6 +54,36 @@ describe('createTransport', () => {
     expect(init?.body).toBe('{"index":{"_index":"foo"}}\n{"field":"value"}\n');
   });
 
+  it('upgrades GET to POST when a body is present', async () => {
+    const fetchMock = spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse({ hits: { total: 0 } })
+    );
+
+    const transport = createTransport({ node: 'https://example.com' });
+    await transport.request({
+      method: 'GET',
+      path: '/my-index/_search',
+      body: { query: { match_all: {} } },
+    });
+
+    const init = fetchMock.mock.calls[0]?.[1];
+    expect(init?.method).toBe('POST');
+    expect(init?.body).toBe('{"query":{"match_all":{}}}');
+  });
+
+  it('leaves GET requests without a body unchanged', async () => {
+    const fetchMock = spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse({ hits: { total: 0 } })
+    );
+
+    const transport = createTransport({ node: 'https://example.com' });
+    await transport.request({ method: 'GET', path: '/my-index/_search' });
+
+    const init = fetchMock.mock.calls[0]?.[1];
+    expect(init?.method).toBe('GET');
+    expect(init?.body).toBeUndefined();
+  });
+
   it('throws ResponseError with statusCode and body on non-2xx responses', async () => {
     spyOn(globalThis, 'fetch').mockResolvedValue(
       jsonResponse({ error: 'index_not_found' }, 404)
@@ -100,7 +130,11 @@ describe('createTransport', () => {
 
     let caught: unknown;
     try {
-      await transport.request({ method: 'PUT', path: '/my-index', body: circular });
+      await transport.request({
+        method: 'PUT',
+        path: '/my-index',
+        body: circular,
+      });
     } catch (error) {
       caught = error;
     }
@@ -110,7 +144,9 @@ describe('createTransport', () => {
   });
 
   it('adds an authorization header when auth is configured', async () => {
-    const fetchMock = spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({}));
+    const fetchMock = spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse({})
+    );
 
     const transport = createTransport({
       node: 'https://example.com',
@@ -156,7 +192,10 @@ describe('createTransport', () => {
     );
 
     const transport = createTransport({ node: 'https://example.com' });
-    const result = await transport.request({ method: 'GET', path: '/_cat/health' });
+    const result = await transport.request({
+      method: 'GET',
+      path: '/_cat/health',
+    });
 
     expect(result).toBe('plain text body');
   });

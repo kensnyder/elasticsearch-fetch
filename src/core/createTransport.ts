@@ -1,6 +1,10 @@
 import { type Auth, buildAuthHeader } from './buildAuthHeader.ts';
 import { buildQuerystring } from './buildQuerystring.ts';
-import { ResponseError, SerializationError } from './errors';
+import { parseResponse } from './parseResponse';
+import { relocateComplexQuerystringEntries } from './relocateComplexQuerystringEntries';
+import { resolveBaseUrl } from './resolveBaseUrl';
+import { resolveRequestMethod } from './resolveRequestMethod';
+import { serializeBody } from './serializeBody';
 
 export interface TransportOptions {
   node: string | string[];
@@ -39,36 +43,8 @@ export type EndpointFn = (
 const ACCEPT_HEADER =
   'application/vnd.elasticsearch+json; compatible-with=9, application/json';
 
-function serializeBody(
-  body: unknown,
-  ndjson?: boolean
-): { payload: string; contentType: string } {
-  if (ndjson) {
-    const lines = (body as unknown[]).map(line => toJson(line));
-    return {
-      payload: `${lines.join('\n')}\n`,
-      contentType: 'application/x-ndjson',
-    };
-  }
-  return { payload: toJson(body), contentType: 'application/json' };
-}
-
-function bigIntReplacer(_key: string, value: unknown): unknown {
-  return typeof value === 'bigint' ? value.toString() : value;
-}
-
-function toJson(body: unknown): string {
-  try {
-    return JSON.stringify(body, bigIntReplacer);
-  } catch (error) {
-    throw new SerializationError((error as Error).message, { cause: error });
-  }
-}
-
 export function createTransport(options: TransportOptions): Transport {
-  const baseUrl = (
-    Array.isArray(options.node) ? options.node[0] : options.node
-  ).replace(/\/+$/, '');
+  const baseUrl = resolveBaseUrl(options.node);
   const authHeader = buildAuthHeader(options.auth);
 
   return {
@@ -76,7 +52,11 @@ export function createTransport(options: TransportOptions): Transport {
       params: RequestParams,
       requestOptions: RequestOptions = {}
     ): Promise<TResponse> {
-      const url = `${baseUrl}${params.path}${buildQuerystring(params.querystring)}`;
+      const { querystring, body } = relocateComplexQuerystringEntries(
+        params.querystring,
+        params.body
+      );
+      const url = `${baseUrl}${params.path}${buildQuerystring(querystring)}`;
 
       const headers: Record<string, string> = {
         accept: ACCEPT_HEADER,
@@ -89,11 +69,13 @@ export function createTransport(options: TransportOptions): Transport {
       }
 
       let payload: string | undefined;
-      if (params.body !== undefined) {
-        const serialized = serializeBody(params.body, params.ndjson);
+      if (body !== undefined) {
+        const serialized = serializeBody(body, params.ndjson);
         payload = serialized.payload;
         headers['content-type'] = serialized.contentType;
       }
+
+      const method = resolveRequestMethod(params.method, payload !== undefined);
 
       const timeout = requestOptions.requestTimeout ?? options.requestTimeout;
       const controller = new AbortController();
@@ -104,7 +86,7 @@ export function createTransport(options: TransportOptions): Transport {
       let response: Response;
       try {
         response = await fetch(url, {
-          method: params.method,
+          method,
           headers,
           body: payload,
           signal: controller.signal,
@@ -115,20 +97,7 @@ export function createTransport(options: TransportOptions): Transport {
         }
       }
 
-      const contentType = response.headers.get('content-type') ?? '';
-      const isJson = contentType.includes('json');
-      const rawBody = await response.text();
-      const parsedBody = isJson && rawBody ? JSON.parse(rawBody) : rawBody;
-
-      if (!response.ok) {
-        throw new ResponseError({
-          statusCode: response.status,
-          headers: Object.fromEntries(response.headers.entries()),
-          body: parsedBody,
-        });
-      }
-
-      return parsedBody as TResponse;
+      return (await parseResponse(response)) as TResponse;
     },
   };
 }
