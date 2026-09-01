@@ -86,6 +86,13 @@ const bulkResponse = await bulk(tx, { refresh: true, operations });
 const count = await count(tx, { index: 'tweets' });
 ```
 
+## Docs
+
+For a list of all methods will associated links to Elasticsearch's online documentation see one of the following:
+
+- [Option 1: SDK compatible](./docs/API.md)
+- [Option 2: Tree shakeable](./docs/functions.md)
+
 ## How it works
 
 Elasticsearch releases a schema file on GitHub that includes all server methods. They generate the JavaScript SDK programmatically based on that schema. Each generated function includes runtime validation which takes up a lot of space. For instance the source code of `bulk` is 2768 bytes in `@elastic/elasticsearch`, but 365 bytes in `elasticsearch-fetch/functions`.

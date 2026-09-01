@@ -8,6 +8,7 @@ const ESTYPES_PATH = join(
   'node_modules/@elastic/elasticsearch/lib/api/types.d.ts'
 );
 const OUT_DIR = join(ROOT, 'src/generated');
+const DOCS_DIR = join(ROOT, 'docs');
 
 const COMMON_QUERY_PARAMS = ['error_trace', 'filter_path', 'human', 'pretty'];
 
@@ -214,6 +215,7 @@ const manifestEntries: Array<{
   path: string[];
   relPath: string;
   functionName: string;
+  docUrl?: string;
 }> = [];
 
 let skipped = 0;
@@ -242,6 +244,7 @@ for (const endpoint of schema.endpoints) {
   }
 
   const segments = endpoint.name.split('.');
+  const clientPath = segments.map(toCamelWord);
   const folder = segments.length > 1 ? segments[0] : null;
   const fileBaseName = toCamelWord(segments[segments.length - 1]);
   const functionName = toNamespacedCamel(segments);
@@ -355,7 +358,12 @@ ${requestObjectLines.join('\n')}
 ${trailer}`;
 
   files.push({ relPath, functionName, code });
-  manifestEntries.push({ path: segments, relPath, functionName });
+  manifestEntries.push({
+    path: clientPath,
+    relPath,
+    functionName,
+    docUrl: endpoint.docUrl,
+  });
   generated++;
 }
 
@@ -394,6 +402,31 @@ ${manifestEntryLines.join('\n')}
 `;
 
 writeFileSync(join(OUT_DIR, 'manifest.ts'), manifestSource);
+
+const sortedManifestEntries = [...manifestEntries].sort((a, b) =>
+  a.path.join('.').localeCompare(b.path.join('.'))
+);
+
+const apiMdLines = [
+  'All methods on client:',
+  '',
+  ...sortedManifestEntries.map(
+    entry => `- [client.${entry.path.join('.')}](${entry.docUrl})`
+  ),
+  '',
+];
+writeFileSync(join(DOCS_DIR, 'API.md'), apiMdLines.join('\n'));
+
+const functionsMdLines = [
+  'All importable functions',
+  '',
+  ...sortedManifestEntries.map(
+    entry =>
+      `- [import { ${entry.functionName} } from 'elasticsearch-fetch/functions'](${entry.docUrl})`
+  ),
+  '',
+];
+writeFileSync(join(DOCS_DIR, 'functions.md'), functionsMdLines.join('\n'));
 
 console.log(
   `Generated ${generated} endpoint functions across ${files.length} files (skipped ${skipped}).`
