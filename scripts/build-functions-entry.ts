@@ -42,8 +42,8 @@ const exportLines = files.map(filePath => {
     : `export { ${functionName} as ${aliasName} } from './src/generated/${relPath}';`;
 });
 
-const entrySource = `export { createTransport } from './src/core/Transport';
-export type { RequestOptions, Transport, TransportOptions } from './src/core/Transport';
+const entrySource = `export { createTransport } from './src/core/createTransport';
+export type { RequestOptions, Transport, TransportOptions } from './src/core/createTransport';
 export { ConfigurationError, ResponseError } from './src/core/errors';
 ${exportLines.join('\n')}
 `;

@@ -328,7 +328,7 @@ for (const endpoint of schema.endpoints) {
       : `\nexport { ${implName} as ${functionName} };\n`;
 
   const code = `import type { estypes } from '@elastic/elasticsearch';
-import type { RequestOptions, Transport } from '${corePrefix}/Transport';
+import type { RequestOptions, Transport } from '${corePrefix}/createTransport';
 import { resolveUrl, type UrlTemplate } from '${corePrefix}/url';
 
 const URLS: UrlTemplate[] = ${urlsLiteral};
@@ -372,7 +372,7 @@ for (const entry of manifestEntries) {
   manifestEntryLines.push(`  ["${entry.path.join('.')}", ${alias}],`);
 }
 
-const manifestSource = `import type { RequestOptions, Transport } from '../core/Transport';
+const manifestSource = `import type { RequestOptions, Transport } from '../core/createTransport';
 ${manifestImportLines.join('\n')}
 
 export type ManifestEntry = [
