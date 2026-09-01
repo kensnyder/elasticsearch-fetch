@@ -1,8 +1,4 @@
-export interface UrlTemplate {
-  methods: string[];
-  path: string;
-  deprecation?: unknown;
-}
+export type UrlTemplate = [methods: string[], path: string];
 
 export interface ResolvedUrl {
   method: string;
@@ -22,12 +18,13 @@ function encodePathValue(value: PathParamValue): string {
 
 export function resolveUrl(
   urls: UrlTemplate[],
-  pathParams: Record<string, PathParamValue> = {}
+  pathParams: Record<string, any> = {}
 ): ResolvedUrl {
   const candidates = urls
-    .map(url => ({
-      url,
-      placeholders: [...url.path.matchAll(PLACEHOLDER)].map(match => match[1]),
+    .map(([methods, path]) => ({
+      methods,
+      path,
+      placeholders: [...path.matchAll(PLACEHOLDER)].map(match => match[1]),
     }))
     .sort((a, b) => b.placeholders.length - a.placeholders.length);
 
@@ -36,7 +33,9 @@ export function resolveUrl(
   );
   const chosen = match ?? candidates[candidates.length - 1];
 
-  const path = chosen.url.path.replace(PLACEHOLDER, (_, name: string) => encodePathValue(pathParams[name]));
+  const path = chosen.path.replace(PLACEHOLDER, (_, name: string) =>
+    encodePathValue(pathParams[name])
+  );
 
-  return { method: chosen.url.methods[0], path };
+  return { method: chosen.methods[0], path };
 }

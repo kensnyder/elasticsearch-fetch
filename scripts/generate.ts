@@ -1,20 +1,63 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 const ROOT = join(import.meta.dirname, '..');
 const SCHEMA_PATH = join(ROOT, 'data/schema.json');
-const ESTYPES_PATH = join(ROOT, 'node_modules/@elastic/elasticsearch/lib/api/types.d.ts');
+const ESTYPES_PATH = join(
+  ROOT,
+  'node_modules/@elastic/elasticsearch/lib/api/types.d.ts'
+);
 const OUT_DIR = join(ROOT, 'src/generated');
 
 const COMMON_QUERY_PARAMS = ['error_trace', 'filter_path', 'human', 'pretty'];
-const RESERVED_FILE_NAMES = new Set(['index', 'manifest']);
 
 const RESERVED_WORDS = new Set([
-  'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger', 'default', 'delete', 'do',
-  'else', 'export', 'extends', 'finally', 'for', 'function', 'if', 'import', 'in', 'instanceof',
-  'new', 'return', 'super', 'switch', 'this', 'throw', 'try', 'typeof', 'var', 'void', 'while',
-  'with', 'yield', 'let', 'static', 'enum', 'await', 'implements', 'package', 'protected',
-  'interface', 'private', 'public', 'null', 'true', 'false',
+  'break',
+  'case',
+  'catch',
+  'class',
+  'const',
+  'continue',
+  'debugger',
+  'default',
+  'delete',
+  'do',
+  'else',
+  'export',
+  'extends',
+  'finally',
+  'for',
+  'function',
+  'if',
+  'import',
+  'in',
+  'instanceof',
+  'new',
+  'return',
+  'super',
+  'switch',
+  'this',
+  'throw',
+  'try',
+  'typeof',
+  'var',
+  'void',
+  'while',
+  'with',
+  'yield',
+  'let',
+  'static',
+  'enum',
+  'await',
+  'implements',
+  'package',
+  'protected',
+  'interface',
+  'private',
+  'public',
+  'null',
+  'true',
+  'false',
 ]);
 
 interface SchemaTypeRef {
@@ -52,8 +95,10 @@ interface SchemaEndpoint {
   urls: SchemaUrl[];
   requestMediaType?: string[];
   codegenExclude?: boolean;
+  description?: string;
+  docUrl?: string;
   availability?: {
-    stack?: { visibility?: string };
+    stack?: { visibility?: string; since?: string };
   };
 }
 
@@ -79,46 +124,90 @@ function toCamelWord(word: string): string {
   return pascal[0].toLowerCase() + pascal.slice(1);
 }
 
-function toCamelDotted(dotted: string): string {
-  const pascal = toPascalDotted(dotted);
-  return pascal[0].toLowerCase() + pascal.slice(1);
-}
-
-function quote(value: string): string {
-  return JSON.stringify(value);
-}
-
-function isValidIdentifier(name: string): boolean {
-  return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name);
-}
-
-function propKey(name: string): string {
-  return isValidIdentifier(name) ? name : quote(name);
-}
-
 const schema: Schema = JSON.parse(readFileSync(SCHEMA_PATH, 'utf8'));
 
 const estypesSource = readFileSync(ESTYPES_PATH, 'utf8');
 const knownInterfaces = new Set<string>();
-for (const match of estypesSource.matchAll(/^export interface (\w+)/gm)) {
+for (const match of estypesSource.matchAll(
+  /^export (?:interface|type) (\w+)/gm
+)) {
   knownInterfaces.add(match[1]);
+}
+
+/** Extracts the set of top-level property names declared directly on an exported interface. */
+function getInterfaceProperties(name: string): Set<string> | null {
+  const headerMatch = new RegExp(`export interface ${name}\\b[^{]*\\{`).exec(
+    estypesSource
+  );
+  if (!headerMatch) return null;
+
+  let i = headerMatch.index + headerMatch[0].length;
+  let depth = 1;
+  let body = '';
+  while (depth > 0 && i < estypesSource.length) {
+    const ch = estypesSource[i];
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) break;
+    }
+    if (depth === 1) body += ch;
+    i++;
+  }
+
+  const noComments = body.replace(/\/\*[\s\S]*?\*\//g, '');
+  const props = new Set<string>();
+  for (const propMatch of noComments.matchAll(
+    /(?:^|;|\n)\s*([A-Za-z_$][A-Za-z0-9_$]*)\??\s*:/g
+  )) {
+    props.add(propMatch[1]);
+  }
+  return props;
+}
+
+function buildJsDoc(endpoint: SchemaEndpoint): string {
+  const lines: string[] = [];
+  if (endpoint.description) {
+    for (const line of endpoint.description
+      .replace(/\*\//g, '*\\/')
+      .split('\n')) {
+      lines.push(line.length > 0 ? ` * ${line}` : ' *');
+    }
+  }
+  const since = endpoint.availability?.stack?.since;
+  const tags: string[] = [];
+  if (since) tags.push(` * @since ${since}`);
+  if (endpoint.docUrl) tags.push(` * @see ${endpoint.docUrl}`);
+  if (tags.length > 0) {
+    if (lines.length > 0) lines.push(' *');
+    lines.push(...tags);
+  }
+  if (lines.length === 0) return '';
+  return `/**\n${lines.join('\n')}\n */\n`;
 }
 
 const requestTypesByKey = new Map<string, SchemaRequestType>();
 for (const type of schema.types) {
   if (type.kind === 'request' && type.name) {
-    requestTypesByKey.set(`${type.name.namespace}::${type.name.name}`, type as unknown as SchemaRequestType);
+    requestTypesByKey.set(
+      `${type.name.namespace}::${type.name.name}`,
+      type as unknown as SchemaRequestType
+    );
   }
 }
 
-interface GeneratedFunction {
+interface GeneratedFile {
+  relPath: string; // path relative to OUT_DIR, no extension, e.g. "bulk" or "cat/health"
   functionName: string;
-  flatName: string;
   code: string;
 }
 
-const fileGroups = new Map<string, GeneratedFunction[]>();
-const manifestEntries: Array<{ path: string[]; file: string; functionName: string }> = [];
+const files: GeneratedFile[] = [];
+const manifestEntries: Array<{
+  path: string[];
+  relPath: string;
+  functionName: string;
+}> = [];
 
 let skipped = 0;
 let generated = 0;
@@ -134,139 +223,152 @@ for (const endpoint of schema.endpoints) {
     continue;
   }
 
-  const requestType = requestTypesByKey.get(`${endpoint.request.namespace}::${endpoint.request.name}`);
+  const requestType = requestTypesByKey.get(
+    `${endpoint.request.namespace}::${endpoint.request.name}`
+  );
   if (!requestType) {
-    console.warn(`No request type found for endpoint "${endpoint.name}", skipping`);
+    console.warn(
+      `No request type found for endpoint "${endpoint.name}", skipping`
+    );
     skipped++;
     continue;
   }
 
   const segments = endpoint.name.split('.');
-  const file = RESERVED_FILE_NAMES.has(segments[0]) ? `${segments[0]}_api` : segments[0];
-  const functionName = segments.length > 1 ? toCamelWord(segments[segments.length - 1]) : toCamelWord(segments[0]);
-  const flatName = segments.length > 1 ? toCamelDotted(endpoint.name) : functionName;
-  const implName = RESERVED_WORDS.has(functionName) ? `${functionName}_` : functionName;
+  const folder = segments.length > 1 ? segments[0] : null;
+  const functionName = toCamelWord(segments[segments.length - 1]);
+  const implName = RESERVED_WORDS.has(functionName)
+    ? `${functionName}_`
+    : functionName;
+  const relPath = folder ? `${folder}/${functionName}` : functionName;
+  const corePrefix = folder ? '../../core' : '../core';
 
   const pascalName = toPascalDotted(endpoint.name);
-  const requestTypeName = knownInterfaces.has(`${pascalName}Request`)
+  const requestProps = knownInterfaces.has(`${pascalName}Request`)
+    ? getInterfaceProperties(`${pascalName}Request`)
+    : null;
+  const responseTypeName = knownInterfaces.has(`${pascalName}Response`)
+    ? `estypes.${pascalName}Response`
+    : 'unknown';
+
+  // Path param names are usually the wire name, but the estypes property is occasionally
+  // named after `codegenName` instead (e.g. ilm.get_lifecycle's wire "policy" -> TS "name").
+  let typed = requestProps !== null;
+  const wirePathNames = requestType.path.map(p => p.name);
+  const resolvedPathNames = requestType.path.map(p => {
+    if (!requestProps) return p.name;
+    if (requestProps.has(p.name)) return p.name;
+    if (p.codegenName && requestProps.has(p.codegenName)) return p.codegenName;
+    typed = false;
+    return p.name;
+  });
+  const pathNames = typed ? resolvedPathNames : wirePathNames;
+  const requestTypeName = typed
     ? `estypes.${pascalName}Request`
     : 'Record<string, any>';
-  const responseTypeName = knownInterfaces.has(`${pascalName}Response`) ? `estypes.${pascalName}Response` : 'unknown';
 
-  const pathEntries = requestType.path.map(p => `    ${propKey(p.name)}: p[${quote(p.name)}],`);
+  const pathRenameMap = new Map(
+    wirePathNames.map((wire, i) => [wire, pathNames[i]])
+  );
+  const urlsLiteral = JSON.stringify(
+    endpoint.urls.map(u => [
+      u.methods,
+      u.path.replace(
+        /\{([a-zA-Z0-9_]+)\}/g,
+        (_, name: string) => `{${pathRenameMap.get(name) ?? name}}`
+      ),
+    ])
+  );
 
-  const queryNames = [...new Set([...requestType.query.map(p => p.name), ...COMMON_QUERY_PARAMS])];
-  const queryEntries = queryNames.map(name => `    ${propKey(name)}: p[${quote(name)}],`);
+  const ndjson = Boolean(
+    endpoint.requestMediaType?.includes('application/x-ndjson')
+  );
 
-  const ndjson = Boolean(endpoint.requestMediaType?.includes('application/x-ndjson'));
+  let destructureParts: string[];
+  let requestObjectLines: string[];
 
-  let bodyExpr: string | undefined;
-  if (requestType.body.kind === 'value') {
-    const key = requestType.body.codegenName ?? 'body';
-    bodyExpr = `p[${quote(key)}]`;
-  } else if (requestType.body.kind === 'properties') {
-    const bodyEntries = requestType.body.properties.map(p => {
-      if (p.aliases?.length) {
-        const names = [p.name, ...p.aliases].map(quote).join(', ');
-        return `    ${propKey(p.name)}: pickAliased(p, [${names}]),`;
-      }
-      return `    ${propKey(p.name)}: p[${quote(p.name)}],`;
-    });
-    bodyExpr = bodyEntries.length > 0 ? `{\n${bodyEntries.join('\n')}\n  }` : undefined;
-  }
+  const pathNameSet = new Set(pathNames);
 
-  const urlsLiteral = JSON.stringify(endpoint.urls);
-
-  const requestCallLines = [
-    '    method,',
-    '    path,',
-    `    querystring: {\n${queryEntries.join('\n')}\n    },`,
-  ];
-  if (bodyExpr !== undefined) {
-    requestCallLines.push(`    body: ${bodyExpr},`);
-    if (ndjson) {
-      requestCallLines.push('    ndjson: true,');
+  if (requestType.body.kind === 'properties') {
+    const allQueryNames = [
+      ...new Set([
+        ...requestType.query.map(p => p.name),
+        ...COMMON_QUERY_PARAMS,
+      ]),
+    ];
+    const newQueryNames = allQueryNames.filter(name => !pathNameSet.has(name));
+    destructureParts = [...pathNames, ...newQueryNames, '...body'];
+    requestObjectLines = [
+      '    method,',
+      '    path,',
+      `    querystring: { ${allQueryNames.join(', ')} },`,
+      '    body,',
+    ];
+  } else {
+    destructureParts = [...pathNames, '...querystring'];
+    if (requestType.body.kind === 'value') {
+      const bodyKey = requestType.body.codegenName ?? 'body';
+      destructureParts.unshift(
+        bodyKey === 'body' ? 'body' : `${bodyKey}: body`
+      );
+    }
+    requestObjectLines = ['    method,', '    path,', '    querystring,'];
+    if (requestType.body.kind === 'value') {
+      requestObjectLines.push('    body,');
+      if (ndjson) requestObjectLines.push('    ndjson: true,');
     }
   }
 
-  const exportNames = [...new Set([functionName, flatName])];
-  const exportLines = exportNames
-    .map(name => (name === implName ? `export { ${implName} };` : `export { ${implName} as ${name} };`))
-    .join('\n');
+  const jsDoc = buildJsDoc(endpoint);
+  const exportKeyword =
+    implName === functionName ? 'export async function' : 'async function';
+  const trailer =
+    implName === functionName
+      ? ''
+      : `\nexport { ${implName} as ${functionName} };\n`;
 
-  const code = `const ${implName.toUpperCase()}_URLS: UrlTemplate[] = ${urlsLiteral};
+  const code = `import type { estypes } from '@elastic/elasticsearch';
+import type { RequestOptions, Transport } from '${corePrefix}/Transport';
+import { resolveUrl, type UrlTemplate } from '${corePrefix}/url';
 
-async function ${implName}(
+const URLS: UrlTemplate[] = ${urlsLiteral};
+
+${jsDoc}${exportKeyword} ${implName}(
   transport: Transport,
   params: ${requestTypeName},
   options?: RequestOptions
 ): Promise<${responseTypeName}> {
-  const p = params as Record<string, any>;
-  const { method, path } = resolveUrl(${implName.toUpperCase()}_URLS, {
-${pathEntries.join('\n')}
-  });
+  const { method, path } = resolveUrl(URLS, params);
+  const { ${destructureParts.join(', ')} } = params;
   return transport.request<${responseTypeName}>({
-${requestCallLines.join('\n')}
+${requestObjectLines.join('\n')}
   }, options);
 }
-${exportLines}
-`;
+${trailer}`;
 
-  if (!fileGroups.has(file)) {
-    fileGroups.set(file, []);
-  }
-  fileGroups.get(file)!.push({ functionName, flatName, code });
-  manifestEntries.push({ path: segments, file, functionName });
+  files.push({ relPath, functionName, code });
+  manifestEntries.push({ path: segments, relPath, functionName });
   generated++;
 }
 
 rmSync(OUT_DIR, { recursive: true, force: true });
 mkdirSync(OUT_DIR, { recursive: true });
 
-const sortedFiles = [...fileGroups.keys()].sort();
-
-for (const file of sortedFiles) {
-  const functions = fileGroups.get(file)!;
-  const usesAliased = functions.some(f => f.code.includes('pickAliased'));
-  const header = [
-    "import type { estypes } from '@elastic/elasticsearch';",
-    "import type { RequestOptions, Transport } from '../core/Transport';",
-    "import { resolveUrl, type UrlTemplate } from '../core/url';",
-    usesAliased ? "import { pickAliased } from '../core/params';" : undefined,
-  ]
-    .filter(Boolean)
-    .join('\n');
-
-  const body = functions
-    .sort((a, b) => a.functionName.localeCompare(b.functionName))
-    .map(f => f.code)
-    .join('\n');
-
-  writeFileSync(join(OUT_DIR, `${file}.ts`), `${header}\n\n${body}`);
+for (const file of files) {
+  const outPath = join(OUT_DIR, `${file.relPath}.ts`);
+  mkdirSync(dirname(outPath), { recursive: true });
+  writeFileSync(outPath, file.code);
 }
-
-const barrelLines = sortedFiles.map(file => {
-  const flatNames = fileGroups
-    .get(file)!
-    .map(f => f.flatName)
-    .sort();
-  return `export { ${flatNames.join(', ')} } from './${file}';`;
-});
-writeFileSync(join(OUT_DIR, 'index.ts'), `${barrelLines.join('\n')}\n`);
 
 const manifestImportLines: string[] = [];
 const manifestEntryLines: string[] = [];
 let importCounter = 0;
-const importAliasByFileAndFn = new Map<string, string>();
 
 for (const entry of manifestEntries) {
-  const key = `${entry.file}::${entry.functionName}`;
-  let alias = importAliasByFileAndFn.get(key);
-  if (!alias) {
-    alias = `fn${importCounter++}`;
-    importAliasByFileAndFn.set(key, alias);
-    manifestImportLines.push(`import { ${entry.functionName} as ${alias} } from './${entry.file}';`);
-  }
+  const alias = `fn${importCounter++}`;
+  manifestImportLines.push(
+    `import { ${entry.functionName} as ${alias} } from './${entry.relPath}';`
+  );
   const pathLiteral = JSON.stringify(entry.path);
   manifestEntryLines.push(`  { path: ${pathLiteral}, fn: ${alias} },`);
 }
@@ -286,4 +388,6 @@ ${manifestEntryLines.join('\n')}
 
 writeFileSync(join(OUT_DIR, 'manifest.ts'), manifestSource);
 
-console.log(`Generated ${generated} endpoint functions across ${sortedFiles.length} files (skipped ${skipped}).`);
+console.log(
+  `Generated ${generated} endpoint functions across ${files.length} files (skipped ${skipped}).`
+);

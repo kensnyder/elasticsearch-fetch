@@ -1,7 +1,16 @@
-import { createTransport, type RequestOptions, type Transport, type TransportOptions } from './core/Transport';
+import {
+  createTransport,
+  type RequestOptions,
+  type Transport,
+  type TransportOptions,
+} from './core/Transport';
 import { endpoints } from './generated/manifest';
 
-export type { RequestOptions, Transport, TransportOptions } from './core/Transport';
+export type {
+  RequestOptions,
+  Transport,
+  TransportOptions,
+} from './core/Transport';
 export { ConfigurationError, ResponseError } from './core/errors';
 
 /**
@@ -26,8 +35,10 @@ export class Client {
         target[path[i]] ??= {};
         target = target[path[i]];
       }
-      target[path[path.length - 1]] = (params: any, requestOptions?: RequestOptions) =>
-        fn(transport, params, requestOptions);
+      target[path[path.length - 1]] = (
+        params: any,
+        requestOptions?: RequestOptions
+      ) => fn(transport, params, requestOptions);
     }
   }
 }

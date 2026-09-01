@@ -2,5 +2,5 @@
   "extends": "./tsconfig.json",
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.spec.ts"],
-  "files": ["functions.ts"]
+  "files": [".functions-entry.ts"]
 }

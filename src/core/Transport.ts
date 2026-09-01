@@ -24,25 +24,40 @@ export interface RequestOptions {
 }
 
 export interface Transport {
-  request<TResponse = unknown>(params: RequestParams, options?: RequestOptions): Promise<TResponse>;
+  request<TResponse = unknown>(
+    params: RequestParams,
+    options?: RequestOptions
+  ): Promise<TResponse>;
 }
 
-const ACCEPT_HEADER = 'application/vnd.elasticsearch+json; compatible-with=9, application/json';
+const ACCEPT_HEADER =
+  'application/vnd.elasticsearch+json; compatible-with=9, application/json';
 
-function serializeBody(body: unknown, ndjson?: boolean): { payload: string; contentType: string } {
+function serializeBody(
+  body: unknown,
+  ndjson?: boolean
+): { payload: string; contentType: string } {
   if (ndjson) {
     const lines = (body as unknown[]).map(line => JSON.stringify(line));
-    return { payload: `${lines.join('\n')}\n`, contentType: 'application/x-ndjson' };
+    return {
+      payload: `${lines.join('\n')}\n`,
+      contentType: 'application/x-ndjson',
+    };
   }
   return { payload: JSON.stringify(body), contentType: 'application/json' };
 }
 
 export function createTransport(options: TransportOptions): Transport {
-  const baseUrl = (Array.isArray(options.node) ? options.node[0] : options.node).replace(/\/+$/, '');
+  const baseUrl = (
+    Array.isArray(options.node) ? options.node[0] : options.node
+  ).replace(/\/+$/, '');
   const authHeader = buildAuthHeader(options.auth);
 
   return {
-    async request<TResponse>(params: RequestParams, requestOptions: RequestOptions = {}): Promise<TResponse> {
+    async request<TResponse>(
+      params: RequestParams,
+      requestOptions: RequestOptions = {}
+    ): Promise<TResponse> {
       const url = `${baseUrl}${params.path}${buildQuerystring(params.querystring)}`;
 
       const headers: Record<string, string> = {
@@ -64,7 +79,9 @@ export function createTransport(options: TransportOptions): Transport {
 
       const timeout = requestOptions.requestTimeout ?? options.requestTimeout;
       const controller = new AbortController();
-      const timer = timeout ? setTimeout(() => controller.abort(), timeout) : undefined;
+      const timer = timeout
+        ? setTimeout(() => controller.abort(), timeout)
+        : undefined;
 
       let response: Response;
       try {

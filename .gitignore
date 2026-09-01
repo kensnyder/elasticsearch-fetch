@@ -2,6 +2,7 @@
 /out-tsc
 data
 src/generated
+/.functions-entry.ts
 
 /node_modules
 npm-debug.log*
