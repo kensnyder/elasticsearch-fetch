@@ -1,8 +1,10 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
+const SCHEMA_URL =
+  'https://github.com/elastic/elasticsearch-specification/raw/refs/heads/main/output/schema/schema.json';
+
 const ROOT = join(import.meta.dirname, '..');
-const SCHEMA_PATH = join(ROOT, 'data/schema.json');
 const ESTYPES_PATH = join(
   ROOT,
   'node_modules/@elastic/elasticsearch/lib/api/types.d.ts'
@@ -132,7 +134,13 @@ function toNamespacedCamel(segments: string[]): string {
     .join('');
 }
 
-const schema: Schema = JSON.parse(readFileSync(SCHEMA_PATH, 'utf8'));
+const schemaResponse = await fetch(SCHEMA_URL);
+if (!schemaResponse.ok) {
+  throw new Error(
+    `Failed to fetch schema.json: ${schemaResponse.status} ${schemaResponse.statusText}`
+  );
+}
+const schema: Schema = await schemaResponse.json();
 
 const estypesSource = readFileSync(ESTYPES_PATH, 'utf8');
 const knownInterfaces = new Set<string>();
