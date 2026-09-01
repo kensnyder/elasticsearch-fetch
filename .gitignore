@@ -3,6 +3,8 @@
 data
 dist
 src/generated
+temp
+coverage
 /.functions-entry.ts
 
 /node_modules

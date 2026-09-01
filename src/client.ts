@@ -1,45 +1,64 @@
 import {
   createTransport,
+  type EndpointFn,
   type RequestOptions,
   type Transport,
   type TransportOptions,
 } from './core/createTransport.ts';
-import { endpoints } from './generated/manifest';
+import type { DotsToNested } from './core/dotsToNested';
 
 export type {
+  EndpointFn,
   RequestOptions,
   Transport,
   TransportOptions,
 } from './core/createTransport.ts';
 export { ConfigurationError, ResponseError } from './core/errors';
 
-/**
- * SDK-compatible client. Method names/namespacing mirror @elastic/elasticsearch
- * (client.search(...), client.indices.create(...)) but the object is built
- * dynamically from the generated endpoint manifest, so it is typed loosely
- * ([key: string]: any) rather than with a fully-typed method-per-namespace shape.
- */
-export interface Client {
-  transport: Transport;
-  [namespace: string]: any;
-}
-
-export class Client {
-  constructor(options: TransportOptions) {
-    const transport = createTransport(options);
-    this.transport = transport;
-
-    for (const [dots, fn] of endpoints) {
-      const path = dots.split('.');
-      let target: any = this;
-      for (let i = 0; i < path.length - 1; i++) {
-        target[path[i]] ??= {};
-        target = target[path[i]];
-      }
-      target[path[path.length - 1]] = (
-        params: any,
-        requestOptions?: RequestOptions
-      ) => fn(transport, params, requestOptions);
+export function registerEndpoints(
+  target: any,
+  transport: Transport,
+  endpoints: Record<string, EndpointFn>
+) {
+  for (const [dots, fn] of Object.entries(endpoints)) {
+    const path = dots.split('.');
+    let node: any = target;
+    for (let i = 0; i < path.length - 1; i++) {
+      node[path[i]] ??= {};
+      node = node[path[i]];
     }
+    node[path[path.length - 1]] = (
+      params: any,
+      requestOptions?: RequestOptions
+    ) => fn(transport, params, requestOptions);
   }
 }
+
+class ClientImpl {
+  transport: Transport;
+  constructor(
+    options: TransportOptions,
+    endpoints: Record<string, EndpointFn> = {}
+  ) {
+    this.transport = createTransport(options);
+    this.register(endpoints);
+  }
+  register(endpoints: Record<string, EndpointFn>) {
+    registerEndpoints(this, this.transport, endpoints);
+  }
+}
+
+/**
+ * Build-your-own SDK client. Register endpoints (individually, or via a
+ * preset) to control exactly which methods are attached, and to keep only
+ * the endpoint modules you actually use in your bundle.
+ */
+export type Client<T extends Record<string, EndpointFn> = {}> = ClientImpl &
+  DotsToNested<T>;
+
+export const Client = ClientImpl as new <
+  T extends Record<string, EndpointFn> = {},
+>(
+  options: TransportOptions,
+  endpoints?: T
+) => Client<T>;

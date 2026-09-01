@@ -30,6 +30,12 @@ export interface Transport {
   ): Promise<TResponse>;
 }
 
+export type EndpointFn = (
+  transport: Transport,
+  params: any,
+  options?: RequestOptions
+) => Promise<any>;
+
 const ACCEPT_HEADER =
   'application/vnd.elasticsearch+json; compatible-with=9, application/json';
 

@@ -21,7 +21,9 @@ function toCamelWord(word: string): string {
 /** Builds a namespaced camelCase function name from generated-file path segments, e.g. ["cat", "aliases"] -> "catAliases". */
 function toNamespacedCamel(segments: string[]): string {
   return segments
-    .map((segment, i) => (i === 0 ? toCamelWord(segment) : toPascalWord(segment)))
+    .map((segment, i) =>
+      i === 0 ? toCamelWord(segment) : toPascalWord(segment)
+    )
     .join('');
 }
 
@@ -31,7 +33,11 @@ function findGeneratedFiles(dir: string): string[] {
     const fullPath = join(dir, entry);
     if (statSync(fullPath).isDirectory()) {
       results.push(...findGeneratedFiles(fullPath));
-    } else if (entry.endsWith('.ts') && entry !== 'manifest.ts') {
+    } else if (
+      entry.endsWith('.ts') &&
+      entry !== 'manifest.ts' &&
+      entry !== 'presets.ts'
+    ) {
       results.push(fullPath);
     }
   }

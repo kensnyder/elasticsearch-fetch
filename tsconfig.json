@@ -2,6 +2,7 @@
   "include": [
     "index.ts",
     ".functions-entry.ts",
+    "presets-entry.ts",
     "src/**/*.ts",
     "scripts/**/*.ts"
   ],

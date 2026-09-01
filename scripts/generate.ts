@@ -130,7 +130,9 @@ function toCamelWord(word: string): string {
 /** Builds a namespaced camelCase function name from endpoint path segments, e.g. ["cat", "aliases"] -> "catAliases". */
 function toNamespacedCamel(segments: string[]): string {
   return segments
-    .map((segment, i) => (i === 0 ? toCamelWord(segment) : toPascalWord(segment)))
+    .map((segment, i) =>
+      i === 0 ? toCamelWord(segment) : toPascalWord(segment)
+    )
     .join('');
 }
 
@@ -383,30 +385,82 @@ for (const file of files) {
 
 const manifestImportLines: string[] = [];
 const manifestEntryLines: string[] = [];
+const entryByName = new Map<
+  string,
+  { relPath: string; functionName: string }
+>();
 let importCounter = 0;
 
 for (const entry of manifestEntries) {
   const alias = `fn${importCounter++}`;
+  const name = entry.path.join('.');
   manifestImportLines.push(
     `import { ${entry.functionName} as ${alias} } from './${entry.relPath}';`
   );
-  manifestEntryLines.push(`  ["${entry.path.join('.')}", ${alias}],`);
+  manifestEntryLines.push(`  "${name}": ${alias},`);
+  entryByName.set(name, {
+    relPath: entry.relPath,
+    functionName: entry.functionName,
+  });
 }
 
-const manifestSource = `import type { RequestOptions, Transport } from '../core/createTransport';
-${manifestImportLines.join('\n')}
+const manifestSource = `${manifestImportLines.join('\n')}
 
-export type ManifestEntry = [
-  string,
-  (transport: Transport, params: any, options?: RequestOptions) => Promise<any>
-];
+export type { EndpointFn } from '../core/createTransport';
 
-export const endpoints: ManifestEntry[] = [
+export const endpoints = {
 ${manifestEntryLines.join('\n')}
-];
+};
 `;
 
 writeFileSync(join(OUT_DIR, 'manifest.ts'), manifestSource);
+
+const presetsModule: Record<string, string[]> = await import(
+  join(ROOT, 'src/presets.ts')
+);
+
+const unresolvedNames: string[] = [];
+for (const [presetName, names] of Object.entries(presetsModule)) {
+  for (const name of names) {
+    if (!entryByName.has(name)) {
+      unresolvedNames.push(`${presetName} -> "${name}"`);
+    }
+  }
+}
+if (unresolvedNames.length > 0) {
+  throw new Error(
+    `src/presets.ts references unknown endpoint name(s):\n${unresolvedNames.map(n => `  ${n}`).join('\n')}`
+  );
+}
+
+const presetImportLines: string[] = [];
+const presetAliasByName = new Map<string, string>();
+let presetImportCounter = 0;
+
+for (const names of Object.values(presetsModule)) {
+  for (const name of names) {
+    if (presetAliasByName.has(name)) continue;
+    const { relPath, functionName } = entryByName.get(name)!;
+    const alias = `pfn${presetImportCounter++}`;
+    presetImportLines.push(
+      `import { ${functionName} as ${alias} } from './${relPath}';`
+    );
+    presetAliasByName.set(name, alias);
+  }
+}
+
+const presetConstLines = Object.entries(presetsModule).map(
+  ([presetName, names]) =>
+    `export const ${presetName} = {\n${names
+      .map(name => `  "${name}": ${presetAliasByName.get(name)},`)
+      .join('\n')}\n};\n`
+);
+
+const presetsSource = `${presetImportLines.join('\n')}
+
+${presetConstLines.join('\n')}`;
+
+writeFileSync(join(OUT_DIR, 'presets.ts'), presetsSource);
 
 const sortedManifestEntries = [...manifestEntries].sort((a, b) =>
   a.path.join('.').localeCompare(b.path.join('.'))
