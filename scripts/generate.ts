@@ -369,17 +369,16 @@ for (const entry of manifestEntries) {
   manifestImportLines.push(
     `import { ${entry.functionName} as ${alias} } from './${entry.relPath}';`
   );
-  const pathLiteral = JSON.stringify(entry.path);
-  manifestEntryLines.push(`  { path: ${pathLiteral}, fn: ${alias} },`);
+  manifestEntryLines.push(`  ["${entry.path.join('.')}", ${alias}],`);
 }
 
 const manifestSource = `import type { RequestOptions, Transport } from '../core/Transport';
 ${manifestImportLines.join('\n')}
 
-export interface ManifestEntry {
-  path: string[];
-  fn: (transport: Transport, params: any, options?: RequestOptions) => Promise<any>;
-}
+export type ManifestEntry = [
+  string,
+  (transport: Transport, params: any, options?: RequestOptions) => Promise<any>
+];
 
 export const endpoints: ManifestEntry[] = [
 ${manifestEntryLines.join('\n')}

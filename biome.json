@@ -15,7 +15,13 @@
     "expand": "auto",
     "useEditorconfig": true
   },
-  "linter": { "enabled": true, "rules": { "preset": "recommended" } },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "suspicious": { "noUnsafeDeclarationMerging": "off" }
+    }
+  },
   "javascript": {
     "formatter": {
       "jsxQuoteStyle": "double",

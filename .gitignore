@@ -1,6 +1,7 @@
 /tmp
 /out-tsc
 data
+dist
 src/generated
 /.functions-entry.ts
 

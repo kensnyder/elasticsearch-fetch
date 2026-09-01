@@ -6,12 +6,12 @@ import {
 } from './core/Transport';
 import { endpoints } from './generated/manifest';
 
+export { ConfigurationError, ResponseError } from './core/errors';
 export type {
   RequestOptions,
   Transport,
   TransportOptions,
 } from './core/Transport';
-export { ConfigurationError, ResponseError } from './core/errors';
 
 /**
  * SDK-compatible client. Method names/namespacing mirror @elastic/elasticsearch
@@ -29,7 +29,8 @@ export class Client {
     const transport = createTransport(options);
     this.transport = transport;
 
-    for (const { path, fn } of endpoints) {
+    for (const [dots, fn] of endpoints) {
+      const path = dots.split('.');
       let target: any = this;
       for (let i = 0; i < path.length - 1; i++) {
         target[path[i]] ??= {};
