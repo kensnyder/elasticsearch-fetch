@@ -8,12 +8,12 @@
 ![Tree Shakeable](https://badgen.net/static/tree%20shakeable/yes/green?v=0.9.0&cb=1)
 [![ISC License](https://badgen.net/github/license/kensnyder/elasticsearch-fetch?v=0.9.0&cb=1)](https://opensource.org/licenses/ISC)
 
-`elasticsearch-fetch` is a 11 times smaller fetch-based alternative to the Elasticsearch SDK (on npm as `@elastic/elasticsearch`). It works on any runtime that supports fetch including Node, Deno, Bun and Edge Worker runtimes.
+`elasticsearch-fetch` is an 11 times smaller fetch-based alternative to the Elasticsearch SDK (on npm as `@elastic/elasticsearch`). It works on any runtime that supports fetch including Node, Deno, Bun and Edge Worker runtimes.
 
 ```bash
 npm install elasticsearch-fetch
 ```
-
+v
 ## Table of Contents
 
 - [File Sizes](#usage)
@@ -34,7 +34,7 @@ compatibility or build size.
 
 ### File Sizes
 
-Your build of `elasticsearch-fetch` can range anywhere between 4kb and 21kb minzipped. But compare that to `@elastic/elasticsearch`'s build size of 257kb minzipped. That's a bundle size savings of 92% to 98%!
+`elasticsearch-fetch` can range anywhere between 4kb and 21kb minzipped in your build. But compare that to `@elastic/elasticsearch`'s build size of 257kb minzipped. That's a bundle size savings of 92% to 98%!
 
 ### Option 1 - Full SDK - 21kb minzipped
 
@@ -102,7 +102,7 @@ const count = await count(tx, { index: 'tweets' });
 
 ### Option 3 (Recommended) - Custom SDK: build your own client from presets and/or individual endpoints
 
-Register exactly the endpoints you want, and `client` is typed to match ­— only the
+Register exactly the endpoints you want, and `client` is typed to match — only the
 registered methods autocomplete and type-check.
 
 ```ts
@@ -149,14 +149,14 @@ Import any combination of the following from `elasticsearch-fetch/presets`
 
 #### Example minzipped build sizes:
 
-- Monlithic @elastic/elasticsearch - 257kb
-- Full elasticsearch-fetch - 21kb
+- Monlithic `@elastic/elasticsearch` - 257kb
+- Full `elasticsearch-fetch` - 21kb
 - presetCrud - 4kb
 - presetCrud + presetSchema - 7kb
 
 ## Auth
 
-You can specify auth in 7 different ways
+Auth is compatible with the official SDK. You can specify auth in 7 different ways.
 
 1. `auth: undefined` - Server requires no auth
 2. `auth: { username: 'user', password: 'pass' }` - Username and password
@@ -168,8 +168,8 @@ You can specify auth in 7 different ways
 
 ## TypeScript Types
 
-Every operation in `elasticsearch-fetch` — whether you use the full SDK, a
-tree-shaken function, or a custom preset-built client — is typed using the
+Every operation in `elasticsearch-fetch`—whether you use the full SDK, a
+tree-shaken function, or a custom preset-built client—is typed using the
 same request/response interfaces as `@elastic/elasticsearch`, exposed under
 its `estypes` namespace. `elasticsearch-fetch` doesn't redefine or duplicate
 Elasticsearch's types; it imports `estypes` as a `type`-only import and reuses
@@ -206,14 +206,14 @@ there's no generic "any operation" signature to fall back on.
 
 ## All Operations
 
-For a list of all methods will associated links to Elasticsearch's online documentation see one of the following:
+For a list of all methods with associated links to Elasticsearch's online documentation see one of the following:
 
 - [SDK methods](./docs/API.md)
 - [Functions](./docs/functions.md)
 
 ## How it Works
 
-Elasticsearch releases a schema file on GitHub that includes all server methods. They generate the JavaScript SDK programmatically based on that schema. Each generated function includes runtime validation which takes up a lot of space. For instance the source code of `bulk` is 2768 bytes in `@elastic/elasticsearch`, but 365 bytes in `elasticsearch-fetch/functions`.
+Elasticsearch releases a schema file on GitHub that includes all server methods. They generate the JavaScript SDK programmatically based on that schema. Each generated function includes runtime validation which takes up a lot of space. For instance the TypeScript source code of `bulk` is 2768 bytes in `@elastic/elasticsearch`, but 352 bytes in `elasticsearch-fetch/functions`.
 
 So `elasticsearch-fetch` includes a small fetch-based transport layer instead of the node-networking transport layer of `@elastic/elasticsearch`. But it also builds its dist from Elasticsearch's own schema file.
 
