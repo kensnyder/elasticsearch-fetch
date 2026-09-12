@@ -17,7 +17,7 @@ v
 ## Table of Contents
 
 - [File Sizes](#usage)
-- [Usage Option 1: Full SDK](#option-1---full-sdk---21kb-minzipped) 
+- [Usage Option 1: Full SDK](#option-1---full-sdk---22kb-minzipped) 
 - [Usage Option 2: Functional Tree-Shaken](#option-2---functional-tree-shaken-your-build-includes-only-what-you-use)
 - [Usage Option 3 (Recommended): Custom SDK](#option-3-recommended---custom-sdk-build-your-own-client-from-presets-andor-individual-endpoints)
 - [Presets](#presets)
@@ -35,9 +35,9 @@ compatibility or build size.
 
 ### File Sizes
 
-`elasticsearch-fetch` can range anywhere between 4kb and 21kb minzipped in your build. But compare that to `@elastic/elasticsearch`'s build size of 257kb minzipped. That's a bundle size savings of 92% to 98%!
+`elasticsearch-fetch` can range anywhere between 4kb and 22kb minzipped in your build. But compare that to `@elastic/elasticsearch`'s build size of 257kb minzipped. That's a bundle size savings of 92% to 98%!
 
-### Option 1 - Full SDK - 21kb minzipped
+### Option 1 - Full SDK - 22kb minzipped
 
 You can use `elasticsearch-fetch` with all 567 of the operations available in the `@elastic/elasticearch` SDK:
 
@@ -151,7 +151,7 @@ Import any combination of the following from `elasticsearch-fetch/presets`
 #### Example minzipped build sizes:
 
 - Monlithic `@elastic/elasticsearch` - 257kb
-- Full `elasticsearch-fetch` - 21kb
+- Full `elasticsearch-fetch` - 22kb
 - presetCrud - 4kb
 - presetCrud + presetSchema - 7kb
 
