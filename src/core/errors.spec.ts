@@ -2,9 +2,45 @@ import { describe, expect, it } from 'bun:test';
 import { ConfigurationError, ResponseError, SerializationError } from './errors.ts';
 
 describe('ResponseError', () => {
-  it('sets the message from the status code', () => {
+  it('sets the message from the status code when the body has no error info', () => {
     const error = new ResponseError({ statusCode: 404, headers: {}, body: null });
     expect(error.message).toBe('Response Error: 404');
+  });
+
+  it('sets the message from a string error body', () => {
+    const error = new ResponseError({ statusCode: 500, headers: {}, body: { error: 'boom' } });
+    expect(error.message).toBe('boom');
+  });
+
+  it('sets the message from the error type and reason', () => {
+    const error = new ResponseError({
+      statusCode: 400,
+      headers: {},
+      body: { error: { type: 'illegal_argument_exception', reason: 'bad request' } },
+    });
+    expect(error.message).toBe('illegal_argument_exception: bad request');
+  });
+
+  it('sets the message from root_cause entries when present', () => {
+    const error = new ResponseError({
+      statusCode: 400,
+      headers: {},
+      body: {
+        error: {
+          type: 'illegal_argument_exception',
+          reason: 'The bulk request must be terminated by a newline [\\n]',
+          root_cause: [
+            {
+              type: 'illegal_argument_exception',
+              reason: 'The bulk request must be terminated by a newline [\\n]',
+            },
+          ],
+        },
+      },
+    });
+    expect(error.message).toBe(
+      'illegal_argument_exception: [illegal_argument_exception] Reason: The bulk request must be terminated by a newline [\\n]'
+    );
   });
 
   it('sets the name to ResponseError', () => {

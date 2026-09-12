@@ -6,6 +6,8 @@ src/generated
 temp
 coverage
 /.functions-entry.ts
+.env
+.env*
 
 /node_modules
 npm-debug.log*

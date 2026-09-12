@@ -5,6 +5,11 @@ export function serializeBody(
   ndjson?: boolean
 ): { payload: string; contentType: string } {
   if (ndjson) {
+    if (!Array.isArray(body)) {
+      throw new SerializationError(
+        'ndjson request body must be an array of items'
+      );
+    }
     const lines = (body as unknown[]).map(line => toJson(line));
     return {
       payload: `${lines.join('\n')}\n`,

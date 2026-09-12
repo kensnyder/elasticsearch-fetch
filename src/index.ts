@@ -17,7 +17,7 @@ export { ConfigurationError, ResponseError } from './core/errors';
 class ClientImpl {
   transport: Transport;
   constructor(
-    options: TransportOptions,
+    options: TransportOptions = {},
     endpoints: Record<string, EndpointFn> = fullEndpoints
   ) {
     this.transport = createTransport(options);
@@ -40,6 +40,6 @@ export type Client<
 export const Client = ClientImpl as new <
   T extends Record<string, EndpointFn> = typeof fullEndpoints,
 >(
-  options: TransportOptions,
+  options?: TransportOptions,
   endpoints?: T
 ) => Client<T>;

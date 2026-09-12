@@ -7,7 +7,7 @@ import { resolveRequestMethod } from './resolveRequestMethod';
 import { serializeBody } from './serializeBody';
 
 export interface TransportOptions {
-  node: string | string[];
+  node?: string | string[];
   auth?: Auth;
   headers?: Record<string, string>;
   requestTimeout?: number;
@@ -43,8 +43,12 @@ export type EndpointFn = (
 const ACCEPT_HEADER =
   'application/vnd.elasticsearch+json; compatible-with=9, application/json';
 
-export function createTransport(options: TransportOptions): Transport {
-  const baseUrl = resolveBaseUrl(options.node);
+export function createTransport(options: TransportOptions = {}): Transport {
+  const baseUrl = resolveBaseUrl(
+    options.node ??
+      globalThis.process?.env?.ELASTICSEARCH_NODE ??
+      'http://localhost:9200'
+  );
   const authHeader = buildAuthHeader(options.auth);
 
   return {

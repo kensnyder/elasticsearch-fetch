@@ -37,7 +37,7 @@ export function registerEndpoints(
 class ClientImpl {
   transport: Transport;
   constructor(
-    options: TransportOptions,
+    options: TransportOptions = {},
     endpoints: Record<string, EndpointFn> = {}
   ) {
     this.transport = createTransport(options);
@@ -59,6 +59,6 @@ export type Client<T extends Record<string, EndpointFn> = {}> = ClientImpl &
 export const Client = ClientImpl as new <
   T extends Record<string, EndpointFn> = {},
 >(
-  options: TransportOptions,
+  options?: TransportOptions,
   endpoints?: T
 ) => Client<T>;

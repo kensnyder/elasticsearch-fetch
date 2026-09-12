@@ -22,6 +22,7 @@ v
 - [Usage Option 3 (Recommended): Custom SDK](#option-3-recommended---custom-sdk-build-your-own-client-from-presets-andor-individual-endpoints)
 - [Presets](#presets)
 - [Auth](#auth)
+- [Connection Options](#connection-options)
 - [TypeScript Types](#typescript-types)
 - [All Operations](#all-operations)
 - [How it Works](#how-it-works)
@@ -165,6 +166,19 @@ Auth is compatible with the official SDK. You can specify auth in 7 different wa
 5. `process.env.ELASTICSEARCH_USERNAME && process.env.ELASTICSEARCH_PASSWORD` - Env vars for username and password
 6. `process.env.ELASTICSEARCH_BEARER` - Env var for bearer token
 7. `process.env.ELASTICSEARCH_API_KEY` - Env var for API key
+
+## Connection Options
+
+`node` is optional when creating a `Client` or a transport with `createTransport()`.
+If omitted, it falls back to `process.env.ELASTICSEARCH_NODE`, and if that's not set
+either, it defaults to `http://localhost:9200`.
+
+```ts
+import { Client } from 'elasticsearch-fetch';
+
+// equivalent to new Client({ node: process.env.ELASTICSEARCH_NODE ?? 'http://localhost:9200' })
+const client = new Client();
+```
 
 ## TypeScript Types
 
