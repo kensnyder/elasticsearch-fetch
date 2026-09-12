@@ -50,3 +50,24 @@ export class SerializationError extends Error {
     this.name = 'SerializationError';
   }
 }
+
+export class DeserializationError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(`Error deserializing response: ${message}`, options);
+    this.name = 'DeserializationError';
+  }
+}
+
+export class ConnectionError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = 'ConnectionError';
+  }
+}
+
+export class TimeoutError extends Error {
+  constructor(message = 'Request timed out', options?: ErrorOptions) {
+    super(message, options);
+    this.name = 'TimeoutError';
+  }
+}

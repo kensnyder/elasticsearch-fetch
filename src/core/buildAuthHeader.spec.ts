@@ -2,6 +2,31 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { buildAuthHeader } from './buildAuthHeader.ts';
 
 describe('buildAuthHeader', () => {
+  const envKeys = [
+    'ELASTICSEARCH_API_KEY',
+    'ELASTICSEARCH_BEARER',
+    'ELASTICSEARCH_USERNAME',
+    'ELASTICSEARCH_PASSWORD',
+  ] as const;
+  const originalEnvValues: Record<string, string | undefined> = {};
+
+  beforeEach(() => {
+    for (const key of envKeys) {
+      originalEnvValues[key] = process.env[key];
+      delete process.env[key];
+    }
+  });
+
+  afterEach(() => {
+    for (const key of envKeys) {
+      if (originalEnvValues[key] === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = originalEnvValues[key];
+      }
+    }
+  });
+
   it('returns undefined when no auth is provided', () => {
     expect(buildAuthHeader()).toBeUndefined();
   });
@@ -31,31 +56,6 @@ describe('buildAuthHeader', () => {
   });
 
   describe('env fallback', () => {
-    const keys = [
-      'ELASTICSEARCH_API_KEY',
-      'ELASTICSEARCH_BEARER',
-      'ELASTICSEARCH_USERNAME',
-      'ELASTICSEARCH_PASSWORD',
-    ] as const;
-    const originalValues: Record<string, string | undefined> = {};
-
-    beforeEach(() => {
-      for (const key of keys) {
-        originalValues[key] = process.env[key];
-        delete process.env[key];
-      }
-    });
-
-    afterEach(() => {
-      for (const key of keys) {
-        if (originalValues[key] === undefined) {
-          delete process.env[key];
-        } else {
-          process.env[key] = originalValues[key];
-        }
-      }
-    });
-
     it('returns undefined when no auth and no env vars are set', () => {
       expect(buildAuthHeader()).toBeUndefined();
     });

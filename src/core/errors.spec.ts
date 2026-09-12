@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'bun:test';
-import { ConfigurationError, ResponseError, SerializationError } from './errors.ts';
+import {
+  ConfigurationError,
+  ConnectionError,
+  DeserializationError,
+  ResponseError,
+  SerializationError,
+  TimeoutError,
+} from './errors.ts';
 
 describe('ResponseError', () => {
   it('sets the message from the status code when the body has no error info', () => {
@@ -97,5 +104,51 @@ describe('SerializationError', () => {
   it('is an instance of Error', () => {
     const error = new SerializationError('circular structure');
     expect(error).toBeInstanceOf(Error);
+  });
+});
+
+describe('DeserializationError', () => {
+  it('prefixes the message', () => {
+    const error = new DeserializationError('Unexpected token');
+    expect(error.message).toBe('Error deserializing response: Unexpected token');
+  });
+
+  it('sets the name to DeserializationError', () => {
+    const error = new DeserializationError('Unexpected token');
+    expect(error.name).toBe('DeserializationError');
+  });
+
+  it('stores the cause when provided', () => {
+    const cause = new SyntaxError('Unexpected token');
+    const error = new DeserializationError('Unexpected token', { cause });
+    expect(error.cause).toBe(cause);
+  });
+});
+
+describe('ConnectionError', () => {
+  it('sets the message and name', () => {
+    const error = new ConnectionError('ECONNREFUSED');
+    expect(error.message).toBe('ECONNREFUSED');
+    expect(error.name).toBe('ConnectionError');
+  });
+
+  it('stores the cause when provided', () => {
+    const cause = new Error('original');
+    const error = new ConnectionError('ECONNREFUSED', { cause });
+    expect(error.cause).toBe(cause);
+  });
+});
+
+describe('TimeoutError', () => {
+  it('defaults to a generic message', () => {
+    const error = new TimeoutError();
+    expect(error.message).toBe('Request timed out');
+    expect(error.name).toBe('TimeoutError');
+  });
+
+  it('stores the cause when provided', () => {
+    const cause = new Error('original');
+    const error = new TimeoutError(undefined, { cause });
+    expect(error.cause).toBe(cause);
   });
 });

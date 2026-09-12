@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test';
 import { createTransport } from './createTransport.ts';
-import { ResponseError, SerializationError } from './errors';
+import { ConnectionError, ResponseError, SerializationError, TimeoutError } from './errors';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -160,7 +160,7 @@ describe('createTransport', () => {
     );
   });
 
-  it('aborts the request when requestTimeout elapses', async () => {
+  it('throws TimeoutError when requestTimeout elapses', async () => {
     spyOn(globalThis, 'fetch').mockImplementation((_url, init) => {
       const signal = (init as RequestInit).signal as AbortSignal;
       return new Promise((_resolve, reject) => {
@@ -180,7 +180,23 @@ describe('createTransport', () => {
       caught = error;
     }
 
-    expect((caught as Error).message).toBe('aborted');
+    expect(caught).toBeInstanceOf(TimeoutError);
+  });
+
+  it('throws ConnectionError when fetch rejects without an abort', async () => {
+    spyOn(globalThis, 'fetch').mockRejectedValue(new Error('ECONNREFUSED'));
+
+    const transport = createTransport({ node: 'https://example.com' });
+
+    let caught: unknown;
+    try {
+      await transport.request({ method: 'GET', path: '/my-index' });
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(ConnectionError);
+    expect((caught as Error).message).toBe('ECONNREFUSED');
   });
 
   it('returns raw text for non-JSON responses', async () => {

@@ -53,7 +53,7 @@ describe('serializeBody', () => {
   it('throws SerializationError when ndjson is requested but the body is not an array', () => {
     expect(() => serializeBody('invalid', true)).toThrow(SerializationError);
     expect(() => serializeBody('invalid', true)).toThrow(
-      'The argument provided is not an array'
+      'ndjson request body must be an array of items'
     );
   });
 });

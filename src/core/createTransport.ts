@@ -1,5 +1,6 @@
 import { type Auth, buildAuthHeader } from './buildAuthHeader.ts';
 import { buildQuerystring } from './buildQuerystring.ts';
+import { ConnectionError, TimeoutError } from './errors';
 import { parseResponse } from './parseResponse';
 import { relocateComplexQuerystringEntries } from './relocateComplexQuerystringEntries';
 import { resolveBaseUrl } from './resolveBaseUrl';
@@ -95,6 +96,11 @@ export function createTransport(options: TransportOptions = {}): Transport {
           body: payload,
           signal: controller.signal,
         });
+      } catch (cause) {
+        if (controller.signal.aborted) {
+          throw new TimeoutError(undefined, { cause });
+        }
+        throw new ConnectionError((cause as Error).message, { cause });
       } finally {
         if (timer) {
           clearTimeout(timer);

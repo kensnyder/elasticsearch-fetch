@@ -3,7 +3,7 @@
 `elasticsearch-fetch` is a lightweight, dependency-free TypeScript library
 providing a fetch-based alternative to the heavy `@elastic/elasticsearch` SDK.
 Works on any fetch-capable runtime (Node, Deno, Bun, Workers). Almost all
-endpoint code is generated, not hand-written: a small fetch-based transport
+endpoint code is generated, not hand-written: a fetch-based transport
 core (hand-written, `src/core/`) plus one thin generated wrapper function per
 Elasticsearch endpoint that shapes `{method, path, querystring, body}` and
 calls the core. Types are borrowed from `@elastic/elasticsearch`'s `estypes`
@@ -103,6 +103,19 @@ call and pass an explicit transport (`bulk(transport, params)`). Both get
 separate `dts-bundle-generator`/ESM(minified)/CJS builds; `build:gzip-size`
 checks `./functions` stays meaningfully smaller than `.`.
 
+## `createTransport()` / `request()` Code Path
+
+Each generated endpoint function calls `resolveUrl` (`src/core/url.ts`) itself to pick the right `UrlTemplate` and fill path params, then calls `transport.request({method, path, querystring, body, ...})` — `createTransport` (`src/core/createTransport.ts`) owns everything from there:
+
+- **Method/path:** resolved by generated function; `createTransport` upgrades GET/HEAD to POST when a body is present, via `resolveRequestMethod` (`src/core/resolveRequestMethod.ts`).
+- **URL/node:** `resolveBaseUrl` (`src/core/resolveBaseUrl.ts`) normalizes `options.node`; every `request()` call concatenates that cached `baseUrl` with `params.path`.
+- **Query string:** `relocateComplexQuerystringEntries` (`src/core/relocateComplexQuerystringEntries.ts`) moves non-primitive query values into the body first, then `buildQuerystring` (`src/core/buildQuerystring.ts`) serializes what's left (arrays joined with `,`).
+- **Auth:** `buildAuthHeader` (`src/core/buildAuthHeader.ts`) runs once at `createTransport()` construction time, producing a single cached `authorization` header.
+- **Body:** `serializeBody` (`src/core/serializeBody.ts`) JSON-encodes `params.body`; `parseResponse` (`src/core/parseResponse.ts`) decodes the `fetch` `Response` on the way out and throws `ResponseError`/`DeserializationError` from `src/core/errors.ts` on failure.
+
+**Initialization/usage by `Client`:** `src/client.ts`'s `ClientImpl`
+constructor calls `createTransport(options)` once and stores the result on `this.transport`, then walks the `endpoints` map (built from `src/generated/manifest.ts`'s dotted names), binding each generated function to that one shared `transport` so `client.cat.health(params)` really calls `fn(this.transport, params, requestOptions)`.
+
 ## Commands and Tools
 
 `bun run build` runs the full pipeline; `build:generate` /
@@ -116,12 +129,13 @@ bun run build:functions:entry && bun run typecheck` — skips the slow
 
 ## Coding Style Rules
 
-Single statement per line; explicit braces for `if`/`for`/`while` on new
-lines; no `return` on the same line as logic; avoid nested ternaries.
-Functions needing 3+ inputs take 1 argument object with named properties.
-Export standalone pure functions instead of modifying prototypes; never
-mutate input parameters — always return derived values. Avoid `any`/`as any`
-(generated code's deliberate `Record<string, any>`/`unknown` fallback is not
-a violation). CLI tools use `import { parseArgs } from "node:util"`. Concise
-comments, JSDoc for public APIs; markdown uses structured headings, no bold
-titles.
+- Single statement per line
+- Explicit braces for `if`/`for`/`while` on newlines
+- No `return` on the same line as logic
+- Functions needing 3+ inputs take 1 argument object with named properties.
+- Export standalone pure functions instead of modifying prototypes
+- Never mutate input parameters — always return derived values
+- Avoid `any`/`as any` (generated code's deliberate `Record<string, any>`/`unknown` fallback is not a violation)
+- CLI tools use `import { parseArgs } from "node:util"`
+- Concise comments, JSDoc for public APIs
+- Markdown uses structured headings, no bold titles

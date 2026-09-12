@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { ResponseError } from './errors';
+import { DeserializationError, ResponseError } from './errors';
 import { parseResponse } from './parseResponse';
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -63,5 +63,21 @@ describe('parseResponse', () => {
     }
 
     expect((caught as ResponseError).meta.headers['x-custom']).toBe('value');
+  });
+
+  it('throws DeserializationError when the JSON body is malformed', async () => {
+    const response = new Response('{not json', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+
+    let caught: unknown;
+    try {
+      await parseResponse(response);
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(DeserializationError);
   });
 });

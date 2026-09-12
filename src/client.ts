@@ -13,7 +13,13 @@ export type {
   Transport,
   TransportOptions,
 } from './core/createTransport.ts';
-export { ConfigurationError, ResponseError } from './core/errors';
+export {
+  ConfigurationError,
+  ConnectionError,
+  DeserializationError,
+  ResponseError,
+  TimeoutError,
+} from './core/errors';
 
 export function registerEndpoints(
   target: any,
