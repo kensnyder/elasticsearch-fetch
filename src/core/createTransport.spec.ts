@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test';
 import { createTransport } from './createTransport.ts';
-import { ConnectionError, ResponseError, SerializationError, TimeoutError } from './errors';
+import {
+  ConnectionError,
+  ResponseError,
+  SerializationError,
+  TimeoutError,
+} from './errors';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -104,6 +109,20 @@ describe('createTransport', () => {
     expect(responseError.meta.body).toEqual({ error: 'index_not_found' });
   });
 
+  it('suppresses ResponseError when status code is ignored in requestOptions', async () => {
+    spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse({ error: 'resource_already_exists_exception' }, 400)
+    );
+
+    const transport = createTransport({ node: 'https://example.com' });
+    const result = await transport.request(
+      { method: 'PUT', path: '/tweets' },
+      { ignore: [400] }
+    );
+
+    expect(result).toEqual({ error: 'resource_already_exists_exception' });
+  });
+
   it('serializes a plain JSON body', async () => {
     const fetchMock = spyOn(globalThis, 'fetch').mockResolvedValue(
       jsonResponse({ acknowledged: true })
@@ -117,9 +136,8 @@ describe('createTransport', () => {
     });
 
     const init = fetchMock.mock.calls[0]?.[1];
-    expect((init?.headers as Record<string, string>)['content-type']).toBe(
-      'application/json'
-    );
+    const headers = init?.headers as Record<string, string> | undefined;
+    expect(headers?.['content-type']).toBe('application/json');
     expect(init?.body).toBe('{"settings":{"number_of_shards":1}}');
   });
 
@@ -155,18 +173,20 @@ describe('createTransport', () => {
     await transport.request({ method: 'GET', path: '/my-index/_search' });
 
     const init = fetchMock.mock.calls[0]?.[1];
-    expect((init?.headers as Record<string, string>).authorization).toBe(
-      'Bearer my-token'
-    );
+    const headers = init?.headers as Record<string, string> | undefined;
+    expect(headers?.authorization).toBe('Bearer my-token');
   });
 
   it('throws TimeoutError when requestTimeout elapses', async () => {
-    spyOn(globalThis, 'fetch').mockImplementation((_url, init) => {
-      const signal = (init as RequestInit).signal as AbortSignal;
+    spyOn(globalThis, 'fetch').mockImplementation(((
+      _url: unknown,
+      init?: RequestInit
+    ) => {
+      const signal = init?.signal as AbortSignal;
       return new Promise((_resolve, reject) => {
         signal.addEventListener('abort', () => reject(new Error('aborted')));
       });
-    });
+    }) as any);
 
     const transport = createTransport({ node: 'https://example.com' });
 

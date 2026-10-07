@@ -33,7 +33,7 @@
     "Elasticsearch Lightweight",
     "Elasticsearch",
     "Elastic",
-    "@elastic/elasticearch",
+    "@elastic/elasticsearch",
     "ES Client"
   ],
   "scripts": {

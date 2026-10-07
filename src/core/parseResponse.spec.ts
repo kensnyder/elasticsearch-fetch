@@ -80,4 +80,33 @@ describe('parseResponse', () => {
 
     expect(caught).toBeInstanceOf(DeserializationError);
   });
+
+  it('returns parsed body when error status code is in ignore array', async () => {
+    const response = jsonResponse(
+      { error: 'resource_already_exists_exception' },
+      400
+    );
+    const result = await parseResponse(response, [400, 404]);
+    expect(result).toEqual({ error: 'resource_already_exists_exception' });
+  });
+
+  it('returns parsed body when error status code matches a single ignore number', async () => {
+    const response = jsonResponse({ error: 'index_not_found' }, 404);
+    const result = await parseResponse(response, 404);
+    expect(result).toEqual({ error: 'index_not_found' });
+  });
+
+  it('throws ResponseError when status code does not match ignore', async () => {
+    const response = jsonResponse({ error: 'internal_server_error' }, 500);
+
+    let caught: unknown;
+    try {
+      await parseResponse(response, [400, 404]);
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(ResponseError);
+    expect((caught as ResponseError).meta.statusCode).toBe(500);
+  });
 });

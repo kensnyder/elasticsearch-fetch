@@ -21,7 +21,8 @@ type ClientMethod<F extends EndpointFn> = F extends (
 export type DotsToNested<T extends Record<string, EndpointFn>> = [
   keyof T & string,
 ] extends [never]
-  ? {}
+  ? // biome-ignore lint/complexity/noBannedTypes: empty object represents empty endpoints
+    {}
   : UnionToIntersection<
       {
         [K in keyof T & string]: K extends `${infer Head}.${infer Rest}`

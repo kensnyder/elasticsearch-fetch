@@ -10,7 +10,10 @@ interface ErrorCause {
 }
 
 function getResponseErrorMessage(meta: ResponseMeta): string {
-  const body = meta.body as { error?: string | (ErrorCause & { root_cause?: ErrorCause[] }) } | null | undefined;
+  const body = meta.body as
+    | { error?: string | (ErrorCause & { root_cause?: ErrorCause[] }) }
+    | null
+    | undefined;
   const error = body?.error;
   if (typeof error === 'string') {
     return error;

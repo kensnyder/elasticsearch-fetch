@@ -1,6 +1,9 @@
 import { DeserializationError, ResponseError } from './errors';
 
-export async function parseResponse(response: Response): Promise<unknown> {
+export async function parseResponse(
+  response: Response,
+  ignore?: number | number[]
+): Promise<unknown> {
   const contentType = response.headers.get('content-type') ?? '';
   const isJson = contentType.includes('json');
   const rawBody = await response.text();
@@ -16,7 +19,11 @@ export async function parseResponse(response: Response): Promise<unknown> {
     parsedBody = rawBody;
   }
 
-  if (!response.ok) {
+  const isIgnored = Array.isArray(ignore)
+    ? ignore.includes(response.status)
+    : ignore === response.status;
+
+  if (!response.ok && !isIgnored) {
     throw new ResponseError({
       statusCode: response.status,
       headers: Object.fromEntries(response.headers.entries()),

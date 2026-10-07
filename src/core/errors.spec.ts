@@ -10,12 +10,20 @@ import {
 
 describe('ResponseError', () => {
   it('sets the message from the status code when the body has no error info', () => {
-    const error = new ResponseError({ statusCode: 404, headers: {}, body: null });
+    const error = new ResponseError({
+      statusCode: 404,
+      headers: {},
+      body: null,
+    });
     expect(error.message).toBe('Response Error: 404');
   });
 
   it('sets the message from a string error body', () => {
-    const error = new ResponseError({ statusCode: 500, headers: {}, body: { error: 'boom' } });
+    const error = new ResponseError({
+      statusCode: 500,
+      headers: {},
+      body: { error: 'boom' },
+    });
     expect(error.message).toBe('boom');
   });
 
@@ -23,7 +31,9 @@ describe('ResponseError', () => {
     const error = new ResponseError({
       statusCode: 400,
       headers: {},
-      body: { error: { type: 'illegal_argument_exception', reason: 'bad request' } },
+      body: {
+        error: { type: 'illegal_argument_exception', reason: 'bad request' },
+      },
     });
     expect(error.message).toBe('illegal_argument_exception: bad request');
   });
@@ -51,18 +61,30 @@ describe('ResponseError', () => {
   });
 
   it('sets the name to ResponseError', () => {
-    const error = new ResponseError({ statusCode: 500, headers: {}, body: null });
+    const error = new ResponseError({
+      statusCode: 500,
+      headers: {},
+      body: null,
+    });
     expect(error.name).toBe('ResponseError');
   });
 
   it('stores the provided meta', () => {
-    const meta = { statusCode: 400, headers: { 'content-type': 'application/json' }, body: { error: 'bad request' } };
+    const meta = {
+      statusCode: 400,
+      headers: { 'content-type': 'application/json' },
+      body: { error: 'bad request' },
+    };
     const error = new ResponseError(meta);
     expect(error.meta).toEqual(meta);
   });
 
   it('is an instance of Error', () => {
-    const error = new ResponseError({ statusCode: 500, headers: {}, body: null });
+    const error = new ResponseError({
+      statusCode: 500,
+      headers: {},
+      body: null,
+    });
     expect(error).toBeInstanceOf(Error);
   });
 });
@@ -110,7 +132,9 @@ describe('SerializationError', () => {
 describe('DeserializationError', () => {
   it('prefixes the message', () => {
     const error = new DeserializationError('Unexpected token');
-    expect(error.message).toBe('Error deserializing response: Unexpected token');
+    expect(error.message).toBe(
+      'Error deserializing response: Unexpected token'
+    );
   });
 
   it('sets the name to DeserializationError', () => {

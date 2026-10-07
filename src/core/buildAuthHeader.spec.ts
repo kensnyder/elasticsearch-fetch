@@ -38,13 +38,15 @@ describe('buildAuthHeader', () => {
   });
 
   it('builds an ApiKey header from a string apiKey', () => {
-    expect(buildAuthHeader({ apiKey: 'my-encoded-key' })).toBe('ApiKey my-encoded-key');
+    expect(buildAuthHeader({ apiKey: 'my-encoded-key' })).toBe(
+      'ApiKey my-encoded-key'
+    );
   });
 
   it('builds an ApiKey header from an id/api_key object', () => {
-    expect(buildAuthHeader({ apiKey: { id: 'id123', api_key: 'secret' } })).toBe(
-      `ApiKey ${btoa('id123:secret')}`
-    );
+    expect(
+      buildAuthHeader({ apiKey: { id: 'id123', api_key: 'secret' } })
+    ).toBe(`ApiKey ${btoa('id123:secret')}`);
   });
 
   it('builds a Bearer header', () => {

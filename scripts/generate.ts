@@ -345,8 +345,14 @@ for (const endpoint of schema.endpoints) {
       ? ''
       : `\nexport { ${implName} as ${functionName} };\n`;
 
-  const code = `import type { estypes } from '@elastic/elasticsearch';
-import type { RequestOptions, Transport } from '${corePrefix}/createTransport';
+  const needsEstypes =
+    requestTypeName.startsWith('estypes.') ||
+    responseTypeName.startsWith('estypes.');
+  const estypesImport = needsEstypes
+    ? "import type { estypes } from '@elastic/elasticsearch';\n"
+    : '';
+
+  const code = `${estypesImport}import type { RequestOptions, Transport } from '${corePrefix}/createTransport';
 import { resolveUrl, type UrlTemplate } from '${corePrefix}/url';
 
 const URLS: UrlTemplate[] = ${urlsLiteral};

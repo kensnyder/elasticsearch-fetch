@@ -17,6 +17,7 @@ export {
   ConnectionError,
   DeserializationError,
   ResponseError,
+  SerializationError,
   TimeoutError,
 } from './core/errors';
 

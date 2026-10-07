@@ -55,7 +55,14 @@ const exportLines = files.map(filePath => {
 
 const entrySource = `export { createTransport } from './src/core/createTransport';
 export type { RequestOptions, Transport, TransportOptions } from './src/core/createTransport';
-export { ConfigurationError, ResponseError } from './src/core/errors';
+export {
+  ConfigurationError,
+  ConnectionError,
+  DeserializationError,
+  ResponseError,
+  SerializationError,
+  TimeoutError,
+} from './src/core/errors';
 ${exportLines.join('\n')}
 `;
 

@@ -100,7 +100,7 @@ file layout changes.
 call-compatible with `@elastic/elasticsearch`. `./functions` is
 tree-shakeable, from `.functions-entry.ts` — consumers import only what they
 call and pass an explicit transport (`bulk(transport, params)`). Both get
-separate `dts-bundle-generator`/ESM(minified)/CJS builds; `build:gzip-size`
+separate `dts-bundle-generator`/ESM(minified) builds; `build:gzip-size`
 checks `./functions` stays meaningfully smaller than `.`.
 
 ## `createTransport()` / `request()` Code Path

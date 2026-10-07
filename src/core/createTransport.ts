@@ -26,6 +26,7 @@ export interface RequestParams {
 export interface RequestOptions {
   requestTimeout?: number;
   headers?: Record<string, string>;
+  ignore?: number | number[];
 }
 
 export interface Transport {
@@ -107,7 +108,10 @@ export function createTransport(options: TransportOptions = {}): Transport {
         }
       }
 
-      return (await parseResponse(response)) as TResponse;
+      return (await parseResponse(
+        response,
+        requestOptions.ignore
+      )) as TResponse;
     },
   };
 }

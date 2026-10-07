@@ -15,11 +15,15 @@ describe('buildQuerystring', () => {
   });
 
   it('joins array values with commas', () => {
-    expect(buildQuerystring({ fields: ['a', 'b', 'c'] })).toBe('?fields=a%2Cb%2Cc');
+    expect(buildQuerystring({ fields: ['a', 'b', 'c'] })).toBe(
+      '?fields=a%2Cb%2Cc'
+    );
   });
 
   it('skips undefined and null values', () => {
-    expect(buildQuerystring({ q: 'foo', missing: undefined, absent: null })).toBe('?q=foo');
+    expect(
+      buildQuerystring({ q: 'foo', missing: undefined, absent: null })
+    ).toBe('?q=foo');
   });
 
   it('stringifies boolean values', () => {

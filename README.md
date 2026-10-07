@@ -8,12 +8,12 @@
 ![Tree Shakeable](https://badgen.net/static/tree%20shakeable/yes/green?v=0.9.0&cb=1)
 [![ISC License](https://badgen.net/github/license/kensnyder/elasticsearch-fetch?v=0.9.0&cb=1)](https://opensource.org/licenses/ISC)
 
-`elasticsearch-fetch` is an 11 times smaller fetch-based alternative to the Elasticsearch SDK (on npm as `@elastic/elasticsearch`). It works on any runtime that supports fetch including Node, Deno, Bun and Edge Worker runtimes.
+`elasticsearch-fetch` is a pure ESM, 11 times smaller fetch-based alternative to the Elasticsearch SDK (on npm as `@elastic/elasticsearch`). It works on any modern ESM runtime that supports fetch including Node.js 18+, Deno, Bun, and Edge Worker runtimes (e.g. Cloudflare Workers).
 
 ```bash
 npm install elasticsearch-fetch
 ```
-v
+
 ## Table of Contents
 
 - [File Sizes](#usage)
@@ -39,7 +39,7 @@ compatibility or build size.
 
 ### Option 1 - Full SDK - 22kb minzipped
 
-You can use `elasticsearch-fetch` with all 567 of the operations available in the `@elastic/elasticearch` SDK:
+You can use `elasticsearch-fetch` with all 567 of the operations available in the `@elastic/elasticsearch` SDK:
 
 ```ts
 import { Client } from 'elasticsearch-fetch';
@@ -54,14 +54,12 @@ const client = new Client({
 
 await client.indices.create({
   index: 'tweets',
-  operations: {
-    mappings: {
-      properties: {
-        id: { type: 'integer' },
-        text: { type: 'text' },
-        user: { type: 'keyword' },
-        time: { type: 'date' }
-      }
+  mappings: {
+    properties: {
+      id: { type: 'integer' },
+      text: { type: 'text' },
+      user: { type: 'keyword' },
+      time: { type: 'date' }
     }
   }
 }, { ignore: [400] });
@@ -73,7 +71,7 @@ const count = await client.count({ index: 'tweets' });
 ### Option 2 - Functional tree-shaken: your build includes only what you use
 
 ```ts
-import { createTransport, create, bulk, count } from 'elasticsearch-fetch/functions';
+import { createTransport, indicesCreate, bulk, count } from 'elasticsearch-fetch/functions';
 
 const tx = createTransport({
   node: 'http://localhost:9200',
@@ -83,16 +81,14 @@ const tx = createTransport({
   },
 });
 
-await create(tx, {
+await indicesCreate(tx, {
   index: 'tweets',
-  operations: {
-    mappings: {
-      properties: {
-        id: { type: 'integer' },
-        text: { type: 'text' },
-        user: { type: 'keyword' },
-        time: { type: 'date' }
-      }
+  mappings: {
+    properties: {
+      id: { type: 'integer' },
+      text: { type: 'text' },
+      user: { type: 'keyword' },
+      time: { type: 'date' }
     }
   }
 }, { ignore: [400] });
@@ -142,7 +138,7 @@ Import any combination of the following from `elasticsearch-fetch/presets`
 - presetCrud - All 39 CRUD operations
 - presetSchema - `info`, all 27 `cat.*` operations, and all 71 `indices.*` operations
 - presetTasks - all 3 `tasks.*` operations
-- presetIngest - all 5 `injest.*` operations
+- presetIngest - all 5 `ingest.*` operations
 - presetEql - all 4 `eql.*` operations
 - presetEsql - all 15 `esql.*` operations
 - presetSql - all 6 `sql.*` operations
@@ -150,7 +146,7 @@ Import any combination of the following from `elasticsearch-fetch/presets`
 
 #### Example minzipped build sizes:
 
-- Monlithic `@elastic/elasticsearch` - 257kb
+- Monolithic `@elastic/elasticsearch` - 257kb
 - Full `elasticsearch-fetch` - 22kb
 - presetCrud - 4kb
 - presetCrud + presetSchema - 7kb

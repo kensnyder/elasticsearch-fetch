@@ -23,20 +23,20 @@ export function buildAuthHeader(auth?: Auth): string | undefined {
 }
 
 function maybeUseEnv() {
-  const p = typeof process !== 'undefined' ? process : null;
-  if (!p) {
+  const env = globalThis.process?.env;
+  if (!env) {
     return undefined;
   }
-  if (p.env?.ELASTICSEARCH_API_KEY) {
-    return buildAuthHeader({ apiKey: p.env.ELASTICSEARCH_API_KEY });
+  if (env.ELASTICSEARCH_API_KEY) {
+    return buildAuthHeader({ apiKey: env.ELASTICSEARCH_API_KEY });
   }
-  if (p.env?.ELASTICSEARCH_BEARER) {
-    return buildAuthHeader({ bearer: p.env.ELASTICSEARCH_BEARER });
+  if (env.ELASTICSEARCH_BEARER) {
+    return buildAuthHeader({ bearer: env.ELASTICSEARCH_BEARER });
   }
-  if (p.env?.ELASTICSEARCH_USERNAME && p.env?.ELASTICSEARCH_PASSWORD) {
+  if (env.ELASTICSEARCH_USERNAME && env.ELASTICSEARCH_PASSWORD) {
     return buildAuthHeader({
-      username: p.env.ELASTICSEARCH_USERNAME,
-      password: p.env.ELASTICSEARCH_PASSWORD,
+      username: env.ELASTICSEARCH_USERNAME,
+      password: env.ELASTICSEARCH_PASSWORD,
     });
   }
   return undefined;
