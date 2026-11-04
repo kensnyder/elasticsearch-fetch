@@ -1,12 +1,12 @@
 # elasticsearch-fetch
 
-[![NPM Link](https://badgen.net/npm/v/elasticsearch-fetch?v=0.9.0&cb=1)](https://npmjs.com/package/elasticsearch-fetch)
-[![Language](https://badgen.net/static/language/TS?v=0.9.0&cb=1)](https://github.com/search?q=repo:kensnyder/elasticsearch-fetch++language:TypeScript&type=code)
-[![Build Status](https://github.com/kensnyder/elasticsearch-fetch/actions/workflows/workflow.yml/badge.svg?v=0.9.0&cb=1)](https://github.com/kensnyder/elasticsearch-fetch/actions)
-[![Code Coverage](https://codecov.io/gh/kensnyder/elasticsearch-fetch/branch/main/graph/badge.svg?v=0.9.0&cb=1)](https://codecov.io/gh/kensnyder/elasticsearch-fetch)
-![Gzipped Size](https://badgen.net/static/minzipped/4kb–21kb/green?v=0.9.0&cb=1)
-![Tree Shakeable](https://badgen.net/static/tree%20shakeable/yes/green?v=0.9.0&cb=1)
-[![ISC License](https://badgen.net/github/license/kensnyder/elasticsearch-fetch?v=0.9.0&cb=1)](https://opensource.org/licenses/ISC)
+[![NPM Link](https://badgen.net/npm/v/elasticsearch-fetch?v=0.9.1&cb=1)](https://npmjs.com/package/elasticsearch-fetch)
+[![Language](https://badgen.net/static/language/TS?v=0.9.1&cb=1)](https://github.com/search?q=repo:kensnyder/elasticsearch-fetch++language:TypeScript&type=code)
+[![Build Status](https://github.com/kensnyder/elasticsearch-fetch/actions/workflows/workflow.yml/badge.svg?v=0.9.1&cb=1)](https://github.com/kensnyder/elasticsearch-fetch/actions)
+[![Code Coverage](https://codecov.io/gh/kensnyder/elasticsearch-fetch/branch/main/graph/badge.svg?v=0.9.1&cb=1)](https://codecov.io/gh/kensnyder/elasticsearch-fetch)
+![Gzipped Size](https://badgen.net/static/minzipped/4kb–21kb/green?v=0.9.1&cb=1)
+![Tree Shakeable](https://badgen.net/static/tree%20shakeable/yes/green?v=0.9.1&cb=1)
+[![ISC License](https://badgen.net/github/license/kensnyder/elasticsearch-fetch?v=0.9.1&cb=1)](https://opensource.org/licenses/ISC)
 
 `elasticsearch-fetch` is a pure ESM, 11 times smaller fetch-based alternative to the Elasticsearch SDK (on npm as `@elastic/elasticsearch`). It works on any modern ESM runtime that supports fetch including Node.js 18+, Deno, Bun, and Edge Worker runtimes (e.g. Cloudflare Workers).
 
