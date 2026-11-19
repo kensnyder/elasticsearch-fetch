@@ -4,6 +4,7 @@ import { ConnectionError, TimeoutError } from './errors';
 import { parseResponse } from './parseResponse';
 import { relocateComplexQuerystringEntries } from './relocateComplexQuerystringEntries';
 import { resolveBaseUrl } from './resolveBaseUrl';
+import { resolveBodyAndQuerystring } from './resolveBodyAndQuerystring';
 import { resolveRequestMethod } from './resolveRequestMethod';
 import { serializeBody } from './serializeBody';
 
@@ -19,6 +20,13 @@ export interface RequestParams {
   path: string;
   querystring?: Record<string, unknown>;
   body?: unknown;
+  /**
+   * Body properties gathered from an endpoint's params (property-payload
+   * endpoints). Unlike `body`, its own `body` and `querystring` keys are read
+   * as the caller's payload and extra query params; see
+   * `resolveBodyAndQuerystring`.
+   */
+  bodyParams?: Record<string, unknown>;
   ndjson?: boolean;
   headers?: Record<string, string>;
 }
@@ -58,9 +66,10 @@ export function createTransport(options: TransportOptions = {}): Transport {
       params: RequestParams,
       requestOptions: RequestOptions = {}
     ): Promise<TResponse> {
+      const resolved = resolveBodyAndQuerystring(params);
       const { querystring, body } = relocateComplexQuerystringEntries(
-        params.querystring,
-        params.body
+        resolved.querystring,
+        resolved.body
       );
       const url = `${baseUrl}${params.path}${buildQuerystring(querystring)}`;
 

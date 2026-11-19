@@ -276,15 +276,23 @@ for (const endpoint of schema.endpoints) {
   // named after `codegenName` instead (e.g. ilm.get_lifecycle's wire "policy" -> TS "name").
   let typed = requestProps !== null;
   const wirePathNames = requestType.path.map(p => p.name);
+  // A named payload can share the path param's wire name (e.g.
+  // snapshot.create_repository: path "repository" and payload `repository`).
+  // That estypes property is the payload, so the path param must resolve
+  // through `codegenName` instead.
+  const payloadName =
+    requestType.body.kind === 'value'
+      ? (requestType.body.codegenName ?? 'body')
+      : null;
   const resolvedPathNames = requestType.path.map(p => {
     if (!requestProps) return p.name;
-    if (requestProps.has(p.name)) return p.name;
+    if (requestProps.has(p.name) && p.name !== payloadName) return p.name;
     if (p.codegenName && requestProps.has(p.codegenName)) return p.codegenName;
     typed = false;
     return p.name;
   });
   const pathNames = typed ? resolvedPathNames : wirePathNames;
-  const requestTypeName = typed
+  let requestTypeName = typed
     ? `estypes.${pascalName}Request`
     : 'Record<string, any>';
 
@@ -317,10 +325,33 @@ for (const endpoint of schema.endpoints) {
         ...COMMON_QUERY_PARAMS,
       ]),
     ].filter(name => !pathNameSet.has(name));
-    destructureParts = [...pathNames, ...allQueryNames, '...body'];
+    // The schema can be newer than the installed estypes and list query
+    // params the request type lacks. They are destructured by name here, so
+    // they are added to the param type to keep the function typed and to keep
+    // sending them in the querystring.
+    const untypedQueryNames =
+      typed && requestProps
+        ? allQueryNames.filter(
+            name =>
+              // common params are inherited from estypes.RequestBase
+              !requestProps.has(name) && !COMMON_QUERY_PARAMS.includes(name)
+          )
+        : [];
+    if (untypedQueryNames.length > 0) {
+      const extraProps = untypedQueryNames
+        .map(name => `${name}?: unknown`)
+        .join('; ');
+      requestTypeName = `${requestTypeName} & { ${extraProps} }`;
+      console.warn(
+        `"${endpoint.name}": query param(s) ${untypedQueryNames.join(', ')} not in estypes, typed as unknown`
+      );
+    }
+    // `bodyParams` (not `body`) tells the transport this rest object may hold
+    // the caller's own `body`/`querystring` keys; see resolveBodyAndQuerystring
+    destructureParts = [...pathNames, ...allQueryNames, '...bodyParams'];
     requestObjectLines = [
       `    querystring: { ${allQueryNames.join(', ')} },`,
-      '    body,',
+      '    bodyParams,',
     ];
   } else {
     destructureParts = [...pathNames, '...querystring'];

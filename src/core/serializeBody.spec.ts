@@ -51,9 +51,23 @@ describe('serializeBody', () => {
   });
 
   it('throws SerializationError when ndjson is requested but the body is not an array', () => {
-    expect(() => serializeBody('invalid', true)).toThrow(SerializationError);
-    expect(() => serializeBody('invalid', true)).toThrow(
+    expect(() => serializeBody({ invalid: true }, true)).toThrow(
+      SerializationError
+    );
+    expect(() => serializeBody({ invalid: true }, true)).toThrow(
       'ndjson request body must be an array of items'
     );
+  });
+
+  it('sends a string body as is', () => {
+    const result = serializeBody('{"query":{"match_all":{}}}');
+    expect(result.payload).toBe('{"query":{"match_all":{}}}');
+    expect(result.contentType).toBe('application/json');
+  });
+
+  it('sends a pre-serialized ndjson string as is', () => {
+    const result = serializeBody('{"index":{}}\n{"a":1}\n', true);
+    expect(result.payload).toBe('{"index":{}}\n{"a":1}\n');
+    expect(result.contentType).toBe('application/x-ndjson');
   });
 });

@@ -1,14 +1,14 @@
 # elasticsearch-fetch
 
-[![NPM Link](https://badgen.net/npm/v/elasticsearch-fetch?v=0.9.1&cb=1)](https://npmjs.com/package/elasticsearch-fetch)
-[![Language](https://badgen.net/static/language/TS?v=0.9.1&cb=1)](https://github.com/search?q=repo:kensnyder/elasticsearch-fetch++language:TypeScript&type=code)
-[![Build Status](https://github.com/kensnyder/elasticsearch-fetch/actions/workflows/workflow.yml/badge.svg?v=0.9.1&cb=1)](https://github.com/kensnyder/elasticsearch-fetch/actions)
-[![Code Coverage](https://codecov.io/gh/kensnyder/elasticsearch-fetch/branch/main/graph/badge.svg?v=0.9.1&cb=1)](https://codecov.io/gh/kensnyder/elasticsearch-fetch)
-![Gzipped Size](https://badgen.net/static/minzipped/4kb–21kb/green?v=0.9.1&cb=1)
-![Tree Shakeable](https://badgen.net/static/tree%20shakeable/yes/green?v=0.9.1&cb=1)
-[![ISC License](https://badgen.net/github/license/kensnyder/elasticsearch-fetch?v=0.9.1&cb=1)](https://opensource.org/licenses/ISC)
+[![NPM Link](https://badgen.net/npm/v/elasticsearch-fetch?v=0.10.0&cb=1)](https://npmjs.com/package/elasticsearch-fetch)
+[![Language](https://badgen.net/static/language/TS?v=0.10.0&cb=1)](https://github.com/search?q=repo:kensnyder/elasticsearch-fetch++language:TypeScript&type=code)
+[![Build Status](https://github.com/kensnyder/elasticsearch-fetch/actions/workflows/workflow.yml/badge.svg?v=0.10.0&cb=1)](https://github.com/kensnyder/elasticsearch-fetch/actions)
+[![Code Coverage](https://codecov.io/gh/kensnyder/elasticsearch-fetch/branch/main/graph/badge.svg?v=0.10.0&cb=1)](https://codecov.io/gh/kensnyder/elasticsearch-fetch)
+![Gzipped Size](https://badgen.net/static/minzipped/4kb–23kb/green?v=0.10.0&cb=1)
+![Tree Shakeable](https://badgen.net/static/tree%20shakeable/yes/green?v=0.10.0&cb=1)
+[![ISC License](https://badgen.net/github/license/kensnyder/elasticsearch-fetch?v=0.10.0&cb=1)](https://opensource.org/licenses/ISC)
 
-`elasticsearch-fetch` is a pure ESM, 11 times smaller fetch-based alternative to the Elasticsearch SDK (on npm as `@elastic/elasticsearch`). It works on any modern ESM runtime that supports fetch including Node.js 18+, Deno, Bun, and Edge Worker runtimes (e.g. Cloudflare Workers).
+`elasticsearch-fetch` is a pure ESM, 11 times smaller fetch-based alternative to the Elasticsearch SDK (on npm as `@elastic/elasticsearch`). It works on any modern ESM runtime that supports fetch including Node.js 18+, Bun, and Edge Worker runtimes (e.g. Cloudflare Workers).
 
 ```bash
 npm install elasticsearch-fetch
@@ -17,9 +17,9 @@ npm install elasticsearch-fetch
 ## Table of Contents
 
 - [File Sizes](#usage)
-- [Usage Option 1: Full SDK](#option-1---full-sdk---22kb-minzipped) 
+- [Usage Option 1: Full SDK](#option-1---full-sdk---23kb-minzipped) 
 - [Usage Option 2: Functional Tree-Shaken](#option-2---functional-tree-shaken-your-build-includes-only-what-you-use)
-- [Usage Option 3 (Recommended): Custom SDK](#option-3-recommended---custom-sdk-build-your-own-client-from-presets-andor-individual-endpoints)
+- [Usage Option 3: Custom SDK](#option-3---custom-sdk-build-your-own-client-from-presets-andor-individual-endpoints)
 - [Presets](#presets)
 - [Auth](#auth)
 - [Connection Options](#connection-options)
@@ -35,9 +35,9 @@ compatibility or build size.
 
 ### File Sizes
 
-`elasticsearch-fetch` can range anywhere between 4kb and 22kb minzipped in your build. But compare that to `@elastic/elasticsearch`'s build size of 257kb minzipped. That's a bundle size savings of 92% to 98%!
+`elasticsearch-fetch` can range anywhere between 4kb and 23kb minzipped in your build. But compare that to `@elastic/elasticsearch`'s build size of 257kb minzipped. That's a bundle size savings of 92% to 98%!
 
-### Option 1 - Full SDK - 22kb minzipped
+### Option 1 - Full SDK - 23kb minzipped
 
 You can use `elasticsearch-fetch` with all 567 of the operations available in the `@elastic/elasticsearch` SDK:
 
@@ -94,10 +94,10 @@ await indicesCreate(tx, {
 }, { ignore: [400] });
 
 const bulkResponse = await bulk(tx, { refresh: true, operations });
-const count = await count(tx, { index: 'tweets' });
+const countResponse = await count(tx, { index: 'tweets' });
 ```
 
-### Option 3 (Recommended) - Custom SDK: build your own client from presets and/or individual endpoints
+### Option 3 - Custom SDK: build your own client from presets and/or individual endpoints
 
 Register exactly the endpoints you want, and `client` is typed to match — only the
 registered methods autocomplete and type-check.
@@ -147,7 +147,7 @@ Import any combination of the following from `elasticsearch-fetch/presets`
 #### Example minzipped build sizes:
 
 - Monolithic `@elastic/elasticsearch` - 257kb
-- Full `elasticsearch-fetch` - 22kb
+- Full `elasticsearch-fetch` - 23kb
 - presetCrud - 4kb
 - presetCrud + presetSchema - 7kb
 
@@ -184,7 +184,7 @@ same request/response interfaces as `@elastic/elasticsearch`, exposed under
 its `estypes` namespace. `elasticsearch-fetch` doesn't redefine or duplicate
 Elasticsearch's types; it imports `estypes` as a `type`-only import and reuses
 it directly, so `@elastic/elasticsearch` only needs to be present for its
-type definitions — none of its runtime code ends up in your bundle.
+type definitions. None of its runtime code ends up in your bundle.
 
 In practice this means you get the same editor autocomplete and compile-time
 checking you'd get from the official SDK:

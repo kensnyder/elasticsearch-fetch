@@ -4,6 +4,11 @@ export function serializeBody(
   body: unknown,
   ndjson?: boolean
 ): { payload: string; contentType: string } {
+  const contentType = ndjson ? 'application/x-ndjson' : 'application/json';
+  // Pre-serialized bodies are sent as is, like @elastic/elasticsearch
+  if (typeof body === 'string') {
+    return { payload: body, contentType };
+  }
   if (ndjson) {
     if (!Array.isArray(body)) {
       throw new SerializationError(
@@ -11,12 +16,9 @@ export function serializeBody(
       );
     }
     const lines = (body as unknown[]).map(line => toJson(line));
-    return {
-      payload: `${lines.join('\n')}\n`,
-      contentType: 'application/x-ndjson',
-    };
+    return { payload: `${lines.join('\n')}\n`, contentType };
   }
-  return { payload: toJson(body), contentType: 'application/json' };
+  return { payload: toJson(body), contentType };
 }
 
 function bigIntReplacer(_key: string, value: unknown): unknown {

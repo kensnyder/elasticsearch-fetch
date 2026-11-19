@@ -235,4 +235,93 @@ describe('createTransport', () => {
 
     expect(result).toBe('plain text body');
   });
+
+  describe('caller body and querystring keys', () => {
+    it('sends a caller body found in the querystring as the payload', async () => {
+      const fetchMock = spyOn(globalThis, 'fetch').mockResolvedValue(
+        jsonResponse({ result: 'created' })
+      );
+
+      const transport = createTransport({ node: 'https://example.com' });
+      await transport.request({
+        method: 'PUT',
+        path: '/my-index/_doc/1',
+        querystring: { refresh: true, body: { title: 't' } },
+      });
+
+      expect(fetchMock.mock.calls[0]?.[0]).toBe(
+        'https://example.com/my-index/_doc/1?refresh=true'
+      );
+      expect(fetchMock.mock.calls[0]?.[1]?.body).toBe('{"title":"t"}');
+    });
+
+    it('sends an explicit body with body/querystring fields unchanged', async () => {
+      const fetchMock = spyOn(globalThis, 'fetch').mockResolvedValue(
+        jsonResponse({ result: 'created' })
+      );
+
+      const transport = createTransport({ node: 'https://example.com' });
+      await transport.request({
+        method: 'PUT',
+        path: '/my-index/_doc/1',
+        body: { title: 't', body: 'text', querystring: 'q' },
+      });
+
+      expect(fetchMock.mock.calls[0]?.[0]).toBe(
+        'https://example.com/my-index/_doc/1'
+      );
+      expect(fetchMock.mock.calls[0]?.[1]?.body).toBe(
+        '{"title":"t","body":"text","querystring":"q"}'
+      );
+    });
+
+    it('merges bodyParams over a caller body and moves querystring entries to the URL', async () => {
+      const fetchMock = spyOn(globalThis, 'fetch').mockResolvedValue(
+        jsonResponse({ hits: { total: 0 } })
+      );
+
+      const transport = createTransport({ node: 'https://example.com' });
+      await transport.request({
+        method: 'GET',
+        path: '/my-index/_search',
+        querystring: { size: undefined },
+        bodyParams: {
+          body: { query: { match_all: {} }, size: 5 },
+          querystring: { size: 3, preference: '_local' },
+          size: 10,
+        },
+      });
+
+      expect(fetchMock.mock.calls[0]?.[0]).toBe(
+        'https://example.com/my-index/_search?size=3&preference=_local'
+      );
+      const init = fetchMock.mock.calls[0]?.[1];
+      expect(init?.method).toBe('POST');
+      expect(init?.body).toBe('{"query":{"match_all":{}},"size":10}');
+    });
+
+    it('still relocates a complex querystring entry from the caller querystring', async () => {
+      const fetchMock = spyOn(globalThis, 'fetch').mockResolvedValue(
+        jsonResponse({ hits: { total: 0 } })
+      );
+
+      const transport = createTransport({ node: 'https://example.com' });
+      await transport.request({
+        method: 'GET',
+        path: '/my-index/_search',
+        querystring: { sort: undefined },
+        bodyParams: {
+          querystring: { sort: [{ age: { order: 'desc' } }] },
+          query: { match_all: {} },
+        },
+      });
+
+      expect(fetchMock.mock.calls[0]?.[0]).toBe(
+        'https://example.com/my-index/_search'
+      );
+      expect(fetchMock.mock.calls[0]?.[1]?.body).toBe(
+        '{"query":{"match_all":{}},"sort":[{"age":{"order":"desc"}}]}'
+      );
+    });
+  });
 });

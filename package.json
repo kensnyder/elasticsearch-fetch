@@ -42,7 +42,7 @@
     "format": "biome format --write",
     "test": "bun test ./src/",
     "test-watch": "bun test --watch ./src/",
-    "build": "bun run build:clean && bun run build:generate && bun run build:functions:entry && bun run build:esm && bun run build:gzip-size",
+    "build": "bun run build:clean && bun run build:generate && bun run build:functions:entry && bun run build:dts && bun run build:esm && bun run build:gzip-size",
     "build:clean": "rm -rf dist/ && mkdir dist",
     "build:generate": "bun run scripts/generate.ts",
     "build:functions:entry": "bun run scripts/build-functions-entry.ts",
@@ -75,9 +75,9 @@
     }
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.11",
+    "@biomejs/biome": "2.6.8",
     "@elastic/elasticsearch": "^9.5.1",
-    "bun-types": "1.4.0",
+    "bun-types": "1.4.5",
     "dts-bundle-generator": "9.5.1",
     "typescript": "7.0.2",
     "typescript-5": "npm:typescript@5.9.3"
