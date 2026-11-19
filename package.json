@@ -1,6 +1,6 @@
 {
   "name": "elasticsearch-fetch",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "description": "A lightweight, fetch-based alternative to the heavy Elasticsearch SDK",
   "type": "module",
   "main": "./dist/index.mjs",
@@ -31,6 +31,8 @@
     "Elasticsearch SDK",
     "Elasticsearch Fetch",
     "Elasticsearch Lightweight",
+    "Elasticsearch Light",
+    "Elasticsearch Lite",
     "Elasticsearch",
     "Elastic",
     "@elastic/elasticsearch",
