@@ -31,10 +31,13 @@ if tasks are ambiguous; use `./temp` for scratch files.
   `@elastic/elasticsearch`'s transport source, prior-art reference only.
 - `dist/`: gitignored build output, published to npm.
 
-`dts-bundle-generator` needs a legacy TypeScript API TS7 no longer exposes, so
-an aliased TypeScript 5 (`typescript-5`) is kept for it, symlinked by
-`build:dts:link` (auto-run via `build:dts`). Don't remove it or use it
-elsewhere — `tsc`/`typecheck`/editor use root TypeScript 7.
+`dts-bundle-generator` needs a compiler API TS7 doesn't expose yet, so v10
+declares `typescript: >=5.4.0 <7` and bun installs a nested TypeScript 5/6
+under `node_modules/dts-bundle-generator/node_modules/` for it automatically.
+Don't use that copy elsewhere — `tsc`/`typecheck`/editor use root
+TypeScript 7. The `build:dts:*` scripts pass `--export-referenced-types`
+(off by default since v10) so types reachable from the entry points, e.g.
+`Auth`/`RequestParams`, stay exported in the bundled `.d.ts`.
 
 ## Code Generation Pipeline
 
@@ -125,8 +128,8 @@ constructor calls `createTransport(options)` once and stores the result on `this
 (no type checking — also run `bun run typecheck`, requires `src/generated/`).
 `bun test` / `bun test --watch` / `bun run coverage` run tests. Fastest
 verification loop when editing the generator: `bun run build:generate &&
-bun run build:functions:entry && bun run typecheck` — skips the slow
-(several-minute) `dts-bundle-generator`/esbuild steps over all ~567 functions.
+bun run build:functions:entry && bun run typecheck` — skips the
+`dts-bundle-generator`/esbuild steps over all ~567 functions.
 
 ## Coding Style Rules
 
