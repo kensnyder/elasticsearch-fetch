@@ -62,7 +62,8 @@
     "example:presetCrud": "bunx esbuild ./examples/presetCrud.mjs --bundle --platform=node --format=esm --minify --outfile=temp/example-presetCrud.mjs && gzip -cv temp/example-presetCrud.mjs | wc -c",
     "example:presetCrudSchema": "bunx esbuild ./examples/presetCrudSchema.mjs --bundle --platform=node --format=esm --minify --outfile=temp/example-presetCrudSchema.mjs && gzip -cv temp/example-presetCrudSchema.mjs | wc -c",
     "example:elastic": "bunx esbuild ./examples/elastic.mjs --bundle --platform=node --format=esm --minify --outfile=temp/example-elastic.mjs && gzip -cv temp/example-elastic.mjs | wc -c",
-    "coverage": "bun test --coverage --coverage-reporter=lcov ./src/",
+    "coverage": "bun test --coverage ./src/core",
+    "coverage-lcov": "bun test --coverage --coverage-reporter=lcov ./src/core",
     "view-coverage": "open ./coverage/index.html"
   },
   "author": "Ken Snyder <kendsnyder@gmail.com>",

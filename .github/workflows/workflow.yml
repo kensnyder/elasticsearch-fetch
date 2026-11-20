@@ -1,38 +1,66 @@
-name: Build
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
+name: build
+on: [ push ]
 jobs:
-  coverage:
+  run:
     runs-on: ubuntu-latest
+
     strategy:
       fail-fast: false
       matrix:
-        bun-version: [ "1.3", "1.4", "latest" ]
-    name: Test (Bun ${{ matrix.bun-version }})
+        # See docs/rules/update-elasticsearch-test-matrix.md for how these
+        # versions are chosen and how to refresh them.
+        es-version: [ "9.0.8", "9.4.9", "9.5.6" ]
+
+    services:
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:${{ matrix.es-version }}
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: "false"
+          xpack.license.self_generated.type: trial
+          ES_JAVA_OPTS: -Xms1g -Xmx1g
+        ports:
+          # Host port 9250 avoids clashing with an Elasticsearch already on
+          # 9200 when running locally with `act`. Must match ES_ENDPOINT below.
+          - 9250:9200
+        options: >-
+          --health-cmd "curl -sf http://localhost:9200/_cluster/health"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+
     steps:
-      - name: Checkout
+      - name: ➡️ Checkout repository
         uses: actions/checkout@v6
 
-      - name: Set up Bun
+      - name: 🧅 Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: ${{ matrix.bun-version }}
+          bun-version: latest
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
+      - name: ⬇️ Install dependencies
+        run: bun install
 
-      - name: Run tests with coverage
-        run: bun run coverage
+      - name: 🏗️ Generate endpoint functions
+        # src/generated is gitignored and the specs import from it
+        run: bun run build:generate
 
-      - name: Upload coverage reports to Codecov
-        if: matrix.bun-version == 'latest'
-        uses: codecov/codecov-action@v5
+      - name: 🔎 Biome lint and format check
+        run: bunx biome ci .
+        continue-on-error: true
+
+      - name: 🏃 Run tests against Elasticsearch ${{ matrix.es-version }}
+        run: bun run coverage-lcov
+        env:
+          ES_ENDPOINT: http://localhost:9250
+
+      - name: ☂️ Upload to codecov
+        # Must match the newest entry in matrix.es-version
+        # env.ACT is set by `act`, which has no CODECOV_TOKEN
+        if: matrix.es-version == '9.5.6' && github.ref == 'refs/heads/main' && !env.ACT
+        uses: codecov/codecov-action@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
           fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
+          files: ./coverage/lcov.info
