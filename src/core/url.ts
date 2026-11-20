@@ -5,11 +5,9 @@ export interface ResolvedUrl {
   path: string;
 }
 
-export type PathParamValue = string | number | boolean | string[] | undefined;
-
 const PLACEHOLDER = /\{([a-zA-Z0-9_]+)\}/g;
 
-function encodePathValue(value: PathParamValue): string {
+function encodePathValue(value: unknown): string {
   if (Array.isArray(value)) {
     return value.map(item => encodeURIComponent(String(item))).join(',');
   }
@@ -18,8 +16,9 @@ function encodePathValue(value: PathParamValue): string {
 
 export function resolveUrl(
   urls: UrlTemplate[],
-  pathParams: Record<string, any> = {}
+  params: object = {}
 ): ResolvedUrl {
+  const pathParams = params as Record<string, unknown>;
   const candidates = urls
     .map(([methods, path]) => ({
       methods,

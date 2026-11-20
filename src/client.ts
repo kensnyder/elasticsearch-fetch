@@ -23,19 +23,19 @@ export {
 } from './core/errors';
 
 export function registerEndpoints(
-  target: any,
+  target: object,
   transport: Transport,
   endpoints: Record<string, EndpointFn>
 ) {
   for (const [dots, fn] of Object.entries(endpoints)) {
     const path = dots.split('.');
-    let node: any = target;
+    let node = target as Record<string, unknown>;
     for (let i = 0; i < path.length - 1; i++) {
       node[path[i]] ??= {};
-      node = node[path[i]];
+      node = node[path[i]] as Record<string, unknown>;
     }
     node[path[path.length - 1]] = (
-      params: any,
+      params: never,
       requestOptions?: RequestOptions
     ) => fn(transport, params, requestOptions);
   }
@@ -60,11 +60,12 @@ class ClientImpl {
  * preset) to control exactly which methods are attached, and to keep only
  * the endpoint modules you actually use in your bundle.
  */
-export type Client<T extends Record<string, EndpointFn> = {}> = ClientImpl &
-  DotsToNested<T>;
+export type Client<
+  T extends Record<string, EndpointFn> = Record<never, EndpointFn>,
+> = ClientImpl & DotsToNested<T>;
 
 export const Client = ClientImpl as new <
-  T extends Record<string, EndpointFn> = {},
+  T extends Record<string, EndpointFn> = Record<never, EndpointFn>,
 >(
   options?: TransportOptions,
   endpoints?: T

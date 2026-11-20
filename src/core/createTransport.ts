@@ -44,11 +44,15 @@ export interface Transport {
   ): Promise<TResponse>;
 }
 
+/**
+ * Any generated endpoint function. `params: never` is the widest parameter
+ * constraint: every concrete params type is assignable to it.
+ */
 export type EndpointFn = (
   transport: Transport,
-  params: any,
+  params: never,
   options?: RequestOptions
-) => Promise<any>;
+) => Promise<unknown>;
 
 const ACCEPT_HEADER =
   'application/vnd.elasticsearch+json; compatible-with=9, application/json';

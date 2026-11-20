@@ -118,7 +118,7 @@ describe('Client', () => {
 
     const client = new Client(
       { node: 'http://localhost:9200' },
-      { search: mockSearch as unknown as EndpointFn }
+      { search: mockSearch }
     );
 
     expect(client.transport).toBeDefined();

@@ -1,13 +1,15 @@
-import type { EndpointFn } from './createTransport';
+import type { EndpointFn, Transport } from './createTransport';
 
-type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
-  k: infer I
-) => void
+type UnionToIntersection<U> = (
+  U extends unknown
+    ? (k: U) => void
+    : never
+) extends (k: infer I) => void
   ? I
   : never;
 
 type ClientMethod<F extends EndpointFn> = F extends (
-  transport: any,
+  transport: Transport,
   params: infer P,
   options?: infer O
 ) => infer R

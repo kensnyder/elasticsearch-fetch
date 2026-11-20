@@ -186,7 +186,7 @@ describe('createTransport', () => {
       return new Promise((_resolve, reject) => {
         signal.addEventListener('abort', () => reject(new Error('aborted')));
       });
-    }) as any);
+    }) as unknown as typeof fetch);
 
     const transport = createTransport({ node: 'https://example.com' });
 

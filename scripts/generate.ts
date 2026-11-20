@@ -477,7 +477,11 @@ let presetImportCounter = 0;
 for (const names of Object.values(presetsModule)) {
   for (const name of names) {
     if (presetAliasByName.has(name)) continue;
-    const { relPath, functionName } = entryByName.get(name)!;
+    const entry = entryByName.get(name);
+    if (!entry) {
+      throw new Error(`src/presets.ts references unknown endpoint: ${name}`);
+    }
+    const { relPath, functionName } = entry;
     const alias = `pfn${presetImportCounter++}`;
     presetImportLines.push(
       `import { ${functionName} as ${alias} } from './${relPath}';`
