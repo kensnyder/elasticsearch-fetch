@@ -17,7 +17,7 @@ npm install elasticsearch-fetch
 ## Table of Contents
 
 - [File Sizes](#usage)
-- [Usage Option 1: Full SDK](#option-1---full-sdk---23kb-minzipped) 
+- [Usage Option 1: Full SDK](#option-1---full-sdk---23kb-minzipped)
 - [Usage Option 2: Functional Tree-Shaken](#option-2---functional-tree-shaken-your-build-includes-only-what-you-use)
 - [Usage Option 3: Custom SDK](#option-3---custom-sdk-build-your-own-client-from-presets-andor-individual-endpoints)
 - [Presets](#presets)
@@ -52,17 +52,20 @@ const client = new Client({
   },
 });
 
-await client.indices.create({
-  index: 'tweets',
-  mappings: {
-    properties: {
-      id: { type: 'integer' },
-      text: { type: 'text' },
-      user: { type: 'keyword' },
-      time: { type: 'date' }
-    }
-  }
-}, { ignore: [400] });
+await client.indices.create(
+  {
+    index: 'tweets',
+    mappings: {
+      properties: {
+        id: { type: 'integer' },
+        text: { type: 'text' },
+        user: { type: 'keyword' },
+        time: { type: 'date' },
+      },
+    },
+  },
+  { ignore: [400] }
+);
 
 const bulkResponse = await client.bulk({ refresh: true, operations });
 const count = await client.count({ index: 'tweets' });
@@ -71,7 +74,12 @@ const count = await client.count({ index: 'tweets' });
 ### Option 2 - Functional tree-shaken: your build includes only what you use
 
 ```ts
-import { createTransport, indicesCreate, bulk, count } from 'elasticsearch-fetch/functions';
+import {
+  createTransport,
+  indicesCreate,
+  bulk,
+  count,
+} from 'elasticsearch-fetch/functions';
 
 const tx = createTransport({
   node: 'http://localhost:9200',
@@ -81,17 +89,21 @@ const tx = createTransport({
   },
 });
 
-await indicesCreate(tx, {
-  index: 'tweets',
-  mappings: {
-    properties: {
-      id: { type: 'integer' },
-      text: { type: 'text' },
-      user: { type: 'keyword' },
-      time: { type: 'date' }
-    }
-  }
-}, { ignore: [400] });
+await indicesCreate(
+  tx,
+  {
+    index: 'tweets',
+    mappings: {
+      properties: {
+        id: { type: 'integer' },
+        text: { type: 'text' },
+        user: { type: 'keyword' },
+        time: { type: 'date' },
+      },
+    },
+  },
+  { ignore: [400] }
+);
 
 const bulkResponse = await bulk(tx, { refresh: true, operations });
 const countResponse = await count(tx, { index: 'tweets' });
