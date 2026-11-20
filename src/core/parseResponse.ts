@@ -1,5 +1,16 @@
 import { DeserializationError, ResponseError } from './errors';
 
+/**
+ * True when `status` matches the caller's `ignore` option (one status code or
+ * a list of them).
+ */
+export function isIgnoredStatus(
+  status: number,
+  ignore?: number | number[]
+): boolean {
+  return Array.isArray(ignore) ? ignore.includes(status) : ignore === status;
+}
+
 export async function parseResponse(
   response: Response,
   ignore?: number | number[]
@@ -19,11 +30,7 @@ export async function parseResponse(
     parsedBody = rawBody;
   }
 
-  const isIgnored = Array.isArray(ignore)
-    ? ignore.includes(response.status)
-    : ignore === response.status;
-
-  if (!response.ok && !isIgnored) {
+  if (!response.ok && !isIgnoredStatus(response.status, ignore)) {
     throw new ResponseError({
       statusCode: response.status,
       headers: Object.fromEntries(response.headers.entries()),

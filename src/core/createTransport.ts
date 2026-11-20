@@ -1,6 +1,7 @@
 import { type Auth, buildAuthHeader } from './buildAuthHeader.ts';
 import { buildQuerystring } from './buildQuerystring.ts';
 import { ConnectionError, TimeoutError } from './errors';
+import { parseHeadResponse } from './parseHeadResponse';
 import { parseResponse } from './parseResponse';
 import { relocateComplexQuerystringEntries } from './relocateComplexQuerystringEntries';
 import { resolveBaseUrl } from './resolveBaseUrl';
@@ -121,10 +122,9 @@ export function createTransport(options: TransportOptions = {}): Transport {
         }
       }
 
-      return (await parseResponse(
-        response,
-        requestOptions.ignore
-      )) as TResponse;
+      // HEAD (exists-style endpoints) resolves to a boolean like the SDK
+      const parse = method === 'HEAD' ? parseHeadResponse : parseResponse;
+      return (await parse(response, requestOptions.ignore)) as TResponse;
     },
   };
 }

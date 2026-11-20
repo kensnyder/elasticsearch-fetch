@@ -109,6 +109,78 @@ describe('createTransport', () => {
     expect(responseError.meta.body).toEqual({ error: 'index_not_found' });
   });
 
+  describe('HEAD requests', () => {
+    it('resolves true on 200', async () => {
+      const fetchMock = spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(null, { status: 200 })
+      );
+
+      const transport = createTransport({ node: 'https://example.com' });
+      const result = await transport.request({
+        method: 'HEAD',
+        path: '/my-index',
+      });
+
+      expect(fetchMock.mock.calls[0]?.[1]?.method).toBe('HEAD');
+      expect(result).toBe(true);
+    });
+
+    it('resolves false on 404', async () => {
+      spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(null, { status: 404 })
+      );
+
+      const transport = createTransport({ node: 'https://example.com' });
+      const result = await transport.request({
+        method: 'HEAD',
+        path: '/missing',
+      });
+
+      expect(result).toBe(false);
+    });
+
+    it('throws ResponseError on 500', async () => {
+      spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(null, { status: 500 })
+      );
+
+      const transport = createTransport({ node: 'https://example.com' });
+      const promise = transport.request({ method: 'HEAD', path: '/my-index' });
+
+      await expect(promise).rejects.toBeInstanceOf(ResponseError);
+      const error = (await promise.catch(thrown => thrown)) as ResponseError;
+      expect(error.meta.statusCode).toBe(500);
+    });
+
+    it('resolves false when an error status is ignored', async () => {
+      spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(null, { status: 401 })
+      );
+
+      const transport = createTransport({ node: 'https://example.com' });
+      const result = await transport.request(
+        { method: 'HEAD', path: '/my-index' },
+        { ignore: [401] }
+      );
+
+      expect(result).toBe(false);
+    });
+
+    it('leaves non-HEAD requests returning the raw body', async () => {
+      spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response('', { status: 200 })
+      );
+
+      const transport = createTransport({ node: 'https://example.com' });
+      const result = await transport.request({
+        method: 'DELETE',
+        path: '/_logstash/pipeline/my-pipeline',
+      });
+
+      expect(result).toBe('');
+    });
+  });
+
   it('suppresses ResponseError when status code is ignored in requestOptions', async () => {
     spyOn(globalThis, 'fetch').mockResolvedValue(
       jsonResponse({ error: 'resource_already_exists_exception' }, 400)

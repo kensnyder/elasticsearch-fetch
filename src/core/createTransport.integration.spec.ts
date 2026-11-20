@@ -157,13 +157,32 @@ describe.skipIf(!isCI)('createTransport (integration)', () => {
     expect(result.count).toBe(2);
   });
 
-  it('resolves HEAD requests with an empty body', async () => {
-    const result = await transport.request({
+  it('resolves HEAD requests to true when the resource exists', async () => {
+    const docExists = await transport.request({
       method: 'HEAD',
       path: `/${index}/_doc/1`,
     });
+    const indexExists = await transport.request({
+      method: 'HEAD',
+      path: `/${index}`,
+    });
 
-    expect(result).toBe('');
+    expect(docExists).toBe(true);
+    expect(indexExists).toBe(true);
+  });
+
+  it('resolves HEAD requests to false on 404', async () => {
+    const docExists = await transport.request({
+      method: 'HEAD',
+      path: `/${index}/_doc/does-not-exist`,
+    });
+    const indexExists = await transport.request({
+      method: 'HEAD',
+      path: `/${index}-missing`,
+    });
+
+    expect(docExists).toBe(false);
+    expect(indexExists).toBe(false);
   });
 
   it('returns non-JSON responses as text', async () => {
